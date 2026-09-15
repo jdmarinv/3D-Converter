@@ -314,9 +314,15 @@ def run_conversion_worker(req):
             conversion_state.update(status="error", log="\n".join(tail)[-3000:] or "Output was not created.")
         else:
             report = conversion_state.get("cadence") or {}
-            conversion_state.update(status="completed", percent=100.0,
+            total = conversion_state.get("total_frames", 0)
+            conversion_state.update(
+                status="completed",
+                percent=100.0,
+                current_frame=total if total > 0 else conversion_state.get("current_frame", 0),
+                eta="00:00",
                 log=("Completed; cadence warning: repeated frames detected. See the cadence report."
-                     if report.get("stutter_detected") else "✓ Processing completed."))
+                     if report.get("stutter_detected") else "✓ Processing completed.")
+            )
     except Exception as exc:
         conversion_state.update(status="error", log=str(exc))
     finally:
