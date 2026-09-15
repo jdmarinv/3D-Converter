@@ -123,7 +123,9 @@
     "btn_resume": "Reanudar",
     "btn_play": "Reproducir 3D",
     "btn_open_folder": "Abrir Carpeta",
-    "log_success": "✓ Proceso terminado con éxito.\nArchivo 3D: {output_file}\n{depth_file}"
+    "log_success": "✓ Proceso terminado con éxito.\nArchivo 3D: {output_file}\n{depth_file}",
+    "status_completed_stutter": "Completado con advertencia de movimiento",
+    "cadence_report": "\nCadencia: {verdict} · {duplicates} repeticiones detectadas en {frames} cuadros."
   },
   "tips": {
     "title": "Consejos para la Mejor Calidad",

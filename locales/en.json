@@ -123,7 +123,9 @@
     "btn_resume": "Resume",
     "btn_play": "Play 3D Media",
     "btn_open_folder": "Open Folder",
-    "log_success": "✓ Process finished successfully.\n3D File: {output_file}\n{depth_file}"
+    "log_success": "✓ Process finished successfully.\n3D File: {output_file}\n{depth_file}",
+    "status_completed_stutter": "Completed with motion warning",
+    "cadence_report": "\nCadence: {verdict} · {duplicates} repetitions detected in {frames} frames."
   },
   "tips": {
     "title": "Tips for Best Quality",

@@ -1164,6 +1164,226 @@
       margin-top: 16px;
     }
 
+    .active-controls-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .btn-pause {
+      padding: 13px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all var(--trans-fast);
+      font-family: inherit;
+    }
+
+    .btn-pause:hover {
+      background: rgba(245, 158, 11, 0.22);
+      border-color: rgba(245, 158, 11, 0.55);
+      transform: translateY(-1px);
+    }
+
+    .progress-bar-fill.paused {
+      background: linear-gradient(90deg, #f59e0b, #d97706) !important;
+      animation: pausedPulse 1.5s ease-in-out infinite !important;
+    }
+
+    @keyframes pausedPulse {
+      0%, 100% { opacity: 0.95; }
+      50% { opacity: 0.45; }
+    }
+
+    /* ==========================================================================
+       CONVERSION HISTORY STYLES
+       ========================================================================== */
+    .history-card {
+      margin-top: 20px;
+    }
+
+    .history-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 420px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+
+    .history-empty {
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      background: rgba(9, 14, 26, 0.4);
+      border: 1px dashed var(--border-subtle);
+      border-radius: var(--radius-md);
+    }
+
+    .history-item {
+      background: rgba(9, 14, 26, 0.65);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      transition: all var(--trans-fast);
+    }
+
+    .history-item:hover {
+      border-color: rgba(99, 102, 241, 0.35);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .history-item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .history-file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .history-filename {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f8fafc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-meta-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .history-tags-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-top: 6px;
+      margin-bottom: 8px;
+    }
+
+    .tag-format {
+      background: rgba(99, 102, 241, 0.18);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: var(--accent-primary-light);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .tag-depth-ready {
+      background: rgba(52, 211, 153, 0.15);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      color: #34d399;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .tag-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-secondary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .history-actions-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .btn-hist-action {
+      padding: 6px 12px;
+      font-size: 11px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-primary);
+      transition: all var(--trans-fast);
+      font-family: inherit;
+    }
+
+    .btn-hist-action:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-hist-reexport {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(6, 182, 212, 0.25));
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      color: var(--accent-cyan-light);
+      font-weight: 600;
+    }
+
+    .btn-hist-reexport:hover {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.4), rgba(6, 182, 212, 0.4));
+      border-color: var(--accent-cyan-light);
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+    }
+
+    .btn-hist-delete {
+      margin-left: auto;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      transition: all var(--trans-fast);
+    }
+
+    .btn-hist-delete:hover {
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.12);
+    }
+
     /* Guidelines / Tips List */
     .tips-list {
       list-style: none;
@@ -1561,6 +1781,16 @@
 
       <!-- Card 2: 3D Presets & Stereoscopic Optics -->
       <section class="panel-card" aria-labelledby="presets-card-title">
+        <!-- Fast Re-export Notification Banner -->
+        <div id="reexport-banner" class="system-alert-banner" style="display: none; margin-bottom: 16px; background: rgba(16, 185, 129, 0.12); border-color: rgba(52, 211, 153, 0.35); color: #6ee7b7;" role="alert">
+          <div class="alert-content">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #34d399; width: 18px; height: 18px; flex-shrink: 0;">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+            <span data-i18n="history.reexport_banner">⚡ Fast Re-export Active: AI depth map is pre-loaded! Select your target format and click Start 3D Conversion.</span>
+          </div>
+        </div>
+
         <div class="card-title" id="presets-card-title">
           <div class="card-title-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1876,12 +2106,23 @@
           </svg>
           <span>Start 3D Conversion</span>
         </button>
-        <button id="btn-cancel" class="btn btn-cancel" style="display: none;" data-i18n="monitor.btn_cancel">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="6" y="6" width="12" height="12" />
-          </svg>
-          <span>Cancel Conversion</span>
-        </button>
+
+        <!-- Active Controls Container (Pause/Resume + Cancel) -->
+        <div id="active-controls-row" class="active-controls-row" style="display: none;">
+          <button id="btn-pause" class="btn-pause" data-i18n="monitor.btn_pause">
+            <svg id="icon-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;">
+              <rect x="6" y="4" width="4" height="16" rx="1" />
+              <rect x="14" y="4" width="4" height="16" rx="1" />
+            </svg>
+            <span id="btn-pause-text">Pause</span>
+          </button>
+          <button id="btn-cancel" class="btn btn-cancel" data-i18n="monitor.btn_cancel">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px;">
+              <rect x="6" y="6" width="12" height="12" />
+            </svg>
+            <span>Cancel Conversion</span>
+          </button>
+        </div>
 
         <!-- Completed Output Actions -->
         <div class="action-row" id="result-actions" style="display: none;">
@@ -1897,6 +2138,26 @@
             </svg>
             <span>Open Folder</span>
           </button>
+        </div>
+      </section>
+
+      <!-- Card 4: Conversion History & Fast Re-export Hub -->
+      <section class="panel-card history-card" aria-labelledby="history-card-title">
+        <div class="history-card-header">
+          <div class="card-title" id="history-card-title" style="margin-bottom: 0;">
+            <div class="card-title-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <span data-i18n="history.title">Conversion History</span>
+            <span class="badge-tag" id="history-count" style="margin-left: 6px;">0</span>
+          </div>
+          <button id="btn-clear-history" class="btn-reset-text" data-i18n="history.btn_clear" style="font-size: 11px;">Clear History</button>
+        </div>
+        <div id="history-list" class="history-list">
+          <div id="history-empty" class="history-empty" data-i18n="history.empty">No past conversions yet. Convert your first media to see it here.</div>
         </div>
       </section>
 
@@ -2046,6 +2307,15 @@
 
     const btnStart = document.getElementById('btn-start');
     const btnCancel = document.getElementById('btn-cancel');
+    const activeControlsRow = document.getElementById('active-controls-row');
+    const btnPause = document.getElementById('btn-pause');
+    const btnPauseText = document.getElementById('btn-pause-text');
+    const iconPause = document.getElementById('icon-pause');
+    const reexportBanner = document.getElementById('reexport-banner');
+    const historyList = document.getElementById('history-list');
+    const historyCount = document.getElementById('history-count');
+    const btnClearHistory = document.getElementById('btn-clear-history');
+    let isPaused = false;
     const resultActions = document.getElementById('result-actions');
     const btnOpenFile = document.getElementById('btn-open-file');
     const btnOpenFolder = document.getElementById('btn-open-folder');
@@ -2282,10 +2552,14 @@
         duration: parseFloat(inputDuration.value || 0)
       };
 
-      btnStart.disabled = true;
-      btnCancel.style.display = 'inline-flex';
+      btnStart.style.display = 'none';
+      activeControlsRow.style.display = 'grid';
+      isPaused = false;
+      btnPauseText.textContent = t('monitor.btn_pause');
+      iconPause.innerHTML = '<rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" />';
       resultActions.style.display = 'none';
       progressBar.classList.add('active');
+      progressBar.classList.remove('paused');
 
       try {
         const res = await fetch('/api/start-conversion', {
@@ -2296,24 +2570,63 @@
         const data = await res.json();
         if (data.error) {
           alert(data.error);
+          btnStart.style.display = 'inline-flex';
           btnStart.disabled = selectingFile;
-          btnCancel.style.display = 'none';
+          activeControlsRow.style.display = 'none';
           progressBar.classList.remove('active');
         }
       } catch (e) {
         alert("Error starting conversion: " + e);
+        btnStart.style.display = 'inline-flex';
         btnStart.disabled = selectingFile;
-        btnCancel.style.display = 'none';
+        activeControlsRow.style.display = 'none';
         progressBar.classList.remove('active');
+      }
+    });
+
+    // Pause / Resume Conversion
+    btnPause.addEventListener('click', async () => {
+      if (!isPaused) {
+        try {
+          const res = await fetch('/api/pause-conversion', { method: 'POST' });
+          if (res.ok) {
+            isPaused = true;
+            btnPauseText.textContent = t('monitor.btn_resume');
+            iconPause.innerHTML = '<polygon points="5 3 19 12 5 21 5 3" />';
+            statusLabel.textContent = t('monitor.status_paused');
+            statusLabel.style.color = '#fbbf24';
+            progressBar.classList.add('paused');
+            logTerminal.textContent = t('monitor.log_paused');
+          }
+        } catch (e) {
+          console.error("Error pausing:", e);
+        }
+      } else {
+        try {
+          const res = await fetch('/api/resume-conversion', { method: 'POST' });
+          if (res.ok) {
+            isPaused = false;
+            btnPauseText.textContent = t('monitor.btn_pause');
+            iconPause.innerHTML = '<rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" />';
+            statusLabel.textContent = t('monitor.status_running');
+            statusLabel.style.color = '#38bdf8';
+            progressBar.classList.remove('paused');
+            logTerminal.textContent = t('monitor.log_resumed');
+          }
+        } catch (e) {
+          console.error("Error resuming:", e);
+        }
       }
     });
 
     // Cancel Conversion
     btnCancel.addEventListener('click', async () => {
       await fetch('/api/stop-conversion', { method: 'POST' });
-      btnCancel.style.display = 'none';
+      activeControlsRow.style.display = 'none';
+      btnStart.style.display = 'inline-flex';
       btnStart.disabled = false;
       progressBar.classList.remove('active');
+      progressBar.classList.remove('paused');
       statusLabel.textContent = t('monitor.status_cancelled') || 'Cancelled';
       statusLabel.style.color = '#fbbf24';
     });
@@ -2328,8 +2641,14 @@
       if (data.status === 'running') {
         dropzone.style.display = 'none';
         framePreview.style.display = 'block';
-        btnStart.disabled = true;
-        btnCancel.style.display = 'inline-flex';
+        btnStart.style.display = 'none';
+        activeControlsRow.style.display = 'grid';
+        if (isPaused) {
+          isPaused = false;
+          btnPauseText.textContent = t('monitor.btn_pause');
+          iconPause.innerHTML = '<rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" />';
+          progressBar.classList.remove('paused');
+        }
         statusLabel.textContent = t('monitor.status_running');
         statusLabel.style.color = '#38bdf8';
         progressPercent.textContent = `${Math.round(data.percent)}%`;
@@ -2346,17 +2665,38 @@
         statFps.textContent = `${data.fps.toFixed(1)} fps`;
         statEta.textContent = data.eta || '--:--';
         if (data.log) logTerminal.textContent = data.log;
+      } else if (data.status === 'paused') {
+        dropzone.style.display = 'none';
+        framePreview.style.display = 'block';
+        btnStart.style.display = 'none';
+        activeControlsRow.style.display = 'grid';
+        if (!isPaused) {
+          isPaused = true;
+          btnPauseText.textContent = t('monitor.btn_resume');
+          iconPause.innerHTML = '<polygon points="5 3 19 12 5 21 5 3" />';
+          progressBar.classList.add('paused');
+        }
+        statusLabel.textContent = t('monitor.status_paused');
+        statusLabel.style.color = '#fbbf24';
+        progressPercent.textContent = `${Math.round(data.percent)}%`;
+        progressBar.style.width = `${data.percent}%`;
+        statFrame.textContent = `${data.current_frame} / ${data.total_frames}`;
+        statFps.textContent = '0.0 fps';
+        statEta.textContent = 'Paused';
+        if (data.log) logTerminal.textContent = data.log;
       } else if (data.status === 'completed') {
+        btnStart.style.display = 'inline-flex';
         btnStart.disabled = selectingFile;
-        btnCancel.style.display = 'none';
+        activeControlsRow.style.display = 'none';
         resultActions.style.display = 'grid';
         statusLabel.textContent = t('monitor.status_completed');
         statusLabel.style.color = '#34d399';
         progressPercent.textContent = '100%';
         progressBar.style.width = '100%';
         progressBar.classList.remove('active');
+        progressBar.classList.remove('paused');
         if (data.cadence && data.cadence.stutter_detected) {
-          statusLabel.textContent = 'Completado con advertencia de movimiento';
+          statusLabel.textContent = t('monitor.status_completed_stutter') || 'Completed with motion warning';
           statusLabel.style.color = '#fbbf24';
         }
         const depthMsg = data.depth_file ? `Depth Map: ${data.depth_file}` : '';
@@ -2364,13 +2704,22 @@
           output_file: data.output_file,
           depth_file: depthMsg
         });
-        if (data.cadence) logTerminal.textContent += `\nCadencia: ${data.cadence.verdict} · ${data.cadence.introduced_duplicates} repeticiones detectadas en ${data.cadence.total_frames_analyzed} cuadros.`;
+        if (data.cadence) {
+          logTerminal.textContent += t('monitor.cadence_report', {
+            verdict: data.cadence.verdict,
+            duplicates: data.cadence.introduced_duplicates,
+            frames: data.cadence.total_frames_analyzed
+          }) || `\nCadence: ${data.cadence.verdict} · ${data.cadence.introduced_duplicates} repetitions detected in ${data.cadence.total_frames_analyzed} frames.`;
+        }
+        loadHistory();
       } else if (data.status === 'error') {
+        btnStart.style.display = 'inline-flex';
         btnStart.disabled = selectingFile;
-        btnCancel.style.display = 'none';
+        activeControlsRow.style.display = 'none';
         statusLabel.textContent = t('monitor.status_error');
         statusLabel.style.color = '#f87171';
         progressBar.classList.remove('active');
+        progressBar.classList.remove('paused');
         logTerminal.textContent = data.log || "An error occurred.";
       }
     }
@@ -2461,6 +2810,7 @@
         document.documentElement.lang = langCode;
         await applyTranslations();
         loadSystemDiagnostics();
+        loadHistory();
       } catch (err) {
         console.error("Error setting language:", err);
       }
@@ -2640,6 +2990,164 @@
       }
     }
 
+    // ==========================================
+    // History & Fast Re-export Engine
+    // ==========================================
+    async function loadHistory() {
+      try {
+        const res = await fetch('/api/history');
+        const data = await res.json();
+        const items = data.history || [];
+        if (historyCount) historyCount.textContent = items.length;
+
+        if (!historyList) return;
+        if (items.length === 0) {
+          historyList.innerHTML = `<div id="history-empty" class="history-empty" data-i18n="history.empty">${t('history.empty')}</div>`;
+          return;
+        }
+
+        historyList.innerHTML = items.map(item => {
+          const depthBadge = item.depth_exists ? `
+            <span class="tag-depth-ready" title="${escapeHtml(t('history.reexport_hint'))}">
+              <svg style="width: 10px; height: 10px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>${t('history.badge_depth_ready')}</span>
+            </span>
+          ` : '';
+
+          const reexportBtn = item.depth_exists ? `
+            <button class="btn-hist-action btn-hist-reexport" onclick="reexportConversion('${escapeJs(JSON.stringify(item))}')" title="${escapeHtml(t('history.reexport_hint'))}">
+              <svg style="width: 12px; height: 12px; color: #34d399;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>${t('history.btn_reexport')}</span>
+            </button>
+          ` : '';
+
+          const playBtn = item.output_exists ? `
+            <button class="btn-hist-action" onclick="openHistoryMedia('${escapeJs(item.output_path)}')">
+              <svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>${t('history.btn_open')}</span>
+            </button>
+          ` : '';
+
+          const folderBtn = item.output_exists ? `
+            <button class="btn-hist-action" onclick="revealHistoryPath('${escapeJs(item.output_path)}')">
+              <svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <span>${t('history.btn_folder')}</span>
+            </button>
+          ` : '';
+
+          const outFilename = (item.output_path || '').split('/').pop() || 'media';
+          const formatUpper = (item.format || 'HSBS').toUpperCase();
+          const metaSub = `${item.date_str || ''} ${item.resolution ? '· ' + item.resolution : ''} ${item.duration ? '· ' + item.duration + 's' : ''}`;
+
+          return `
+            <div class="history-item">
+              <div class="history-item-top">
+                <div class="history-file-info">
+                  <div class="history-filename" title="${escapeHtml(item.output_path)}">${escapeHtml(outFilename)}</div>
+                  <div class="history-meta-sub">${escapeHtml(metaSub)}</div>
+                </div>
+                <button class="btn-reset-text" style="color: var(--text-dim); font-size: 11px; padding: 2px 6px;" onclick="deleteHistoryItem('${escapeJs(item.id)}')" title="${escapeHtml(t('history.btn_delete'))}">✕</button>
+              </div>
+              <div class="history-tags-row">
+                <span class="tag-format">${escapeHtml(formatUpper)}</span>
+                <span class="tag-chip">${escapeHtml(item.depth_profile || 'balanced')}</span>
+                <span class="tag-chip">3D: ${escapeHtml(String(item.strength_3d || 5.0))}</span>
+                ${depthBadge}
+              </div>
+              <div class="history-actions-row">
+                ${playBtn}
+                ${folderBtn}
+                ${reexportBtn}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error("Error loading history:", err);
+      }
+    }
+
+    async function deleteHistoryItem(id) {
+      try {
+        await fetch(`/api/history/${id}`, { method: 'DELETE' });
+        await loadHistory();
+      } catch (err) {
+        console.error("Error deleting history entry:", err);
+      }
+    }
+
+    if (btnClearHistory) {
+      btnClearHistory.addEventListener('click', async () => {
+        if (confirm(t('history.confirm_clear') || 'Are you sure you want to clear the conversion history?')) {
+          try {
+            await fetch('/api/history/clear', { method: 'POST' });
+            await loadHistory();
+          } catch (err) {
+            console.error("Error clearing history:", err);
+          }
+        }
+      });
+    }
+
+    async function openHistoryMedia(path) {
+      try {
+        await fetch('/api/open-path', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: path })
+        });
+      } catch (err) {
+        console.error("Error opening media:", err);
+      }
+    }
+
+    async function revealHistoryPath(path) {
+      try {
+        await fetch('/api/open-path', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: path, reveal: true })
+        });
+      } catch (err) {
+        console.error("Error revealing path:", err);
+      }
+    }
+
+    function reexportConversion(itemJson) {
+      try {
+        const item = typeof itemJson === 'string' ? JSON.parse(itemJson) : itemJson;
+        if (!item.input_path || !item.depth_path) return;
+
+        // 1. Fill input path & probe
+        inputPath.value = item.input_path;
+        probeFile(item.input_path);
+
+        // 2. Activate custom depth
+        chkCustomDepth.checked = true;
+        customDepthBox.style.display = 'block';
+        customDepthPath.value = item.depth_path;
+
+        // 3. Show Fast Re-export Banner
+        if (reexportBanner) {
+          reexportBanner.style.display = 'flex';
+        }
+
+        // 4. Scroll smoothly to target format dropdown and highlight it
+        formatSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        formatSelect.focus();
+        formatSelect.style.outline = '2px solid var(--accent-cyan)';
+        formatSelect.style.boxShadow = '0 0 20px rgba(6, 182, 212, 0.5)';
+        setTimeout(() => {
+          formatSelect.style.outline = '';
+          formatSelect.style.boxShadow = '';
+        }, 3000);
+
+      } catch (e) {
+        console.error("Error preparing re-export:", e);
+      }
+    }
+
     // Modal Event Bindings
     hardwareBadge.addEventListener('click', openDiagnosticsModal);
     hardwareBadge.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') openDiagnosticsModal(); });
@@ -2661,6 +3169,7 @@
     (async function init() {
       await populateLanguages();
       await setLanguage(currentLang);
+      await loadHistory();
     })();
   </script>
 </body>

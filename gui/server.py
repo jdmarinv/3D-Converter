@@ -335,6 +335,30 @@ def run_conversion_worker(req):
                 log=("Completed; cadence warning: repeated frames detected. See the cadence report."
                      if report.get("stutter_detected") else "✓ Processing completed.")
             )
+            # Record in history
+            try:
+                out_p = Path(conversion_state["output_file"])
+                depth_p = Path(conversion_state.get("depth_file", "")) if conversion_state.get("depth_file") else None
+                history_entry = {
+                    "id": f"conv_{int(time.time())}_{out_p.stem[:8]}",
+                    "timestamp": int(time.time()),
+                    "date_str": time.strftime("%Y-%m-%d %H:%M"),
+                    "input_path": conversion_state["input_file"],
+                    "output_path": str(out_p),
+                    "depth_path": str(depth_p) if depth_p and depth_p.exists() else "",
+                    "has_depth": bool(depth_p and depth_p.exists()),
+                    "format": req.format,
+                    "strength_3d": req.strength_3d if req.strength_3d is not None else 5.0,
+                    "style_3d": req.style_3d or "natural",
+                    "depth_profile": req.depth_profile or "balanced",
+                    "depth_stride": req.depth_stride or 1,
+                    "total_frames": conversion_state.get("total_frames", 0),
+                    "resolution": f"{selected_media.get('width', 0)}x{selected_media.get('height', 0)}" if selected_media else "",
+                    "duration": round(float(selected_media.get("duration", 0.0) or 0.0), 1)
+                }
+                add_history_entry(history_entry)
+            except Exception as e:
+                print(f"[History Warning] Could not record history: {e}")
     except Exception as exc:
         conversion_state.update(status="error", log=str(exc))
     finally:
@@ -342,10 +366,124 @@ def run_conversion_worker(req):
         conversion_state["process"] = None
 
 
+def pause_conversion(proc) -> bool:
+    if proc is None or proc.poll() is not None:
+        return False
+    if os.name != "nt":
+        try:
+            os.killpg(proc.pid, signal.SIGSTOP)
+            return True
+        except Exception as e:
+            print(f"[GUI Server] Error pausing process: {e}")
+            return False
+    else:
+        try:
+            import ctypes
+            handle = ctypes.windll.kernel32.OpenProcess(0x1F0FFF, False, proc.pid)
+            if handle:
+                ctypes.windll.ntdll.NtSuspendProcess(handle)
+                ctypes.windll.kernel32.CloseHandle(handle)
+                return True
+        except Exception as e:
+            print(f"[GUI Server] Error pausing process on Windows: {e}")
+        return False
+
+
+def resume_conversion(proc) -> bool:
+    if proc is None or proc.poll() is not None:
+        return False
+    if os.name != "nt":
+        try:
+            os.killpg(proc.pid, signal.SIGCONT)
+            return True
+        except Exception as e:
+            print(f"[GUI Server] Error resuming process: {e}")
+            return False
+    else:
+        try:
+            import ctypes
+            handle = ctypes.windll.kernel32.OpenProcess(0x1F0FFF, False, proc.pid)
+            if handle:
+                ctypes.windll.ntdll.NtResumeProcess(handle)
+                ctypes.windll.kernel32.CloseHandle(handle)
+                return True
+        except Exception as e:
+            print(f"[GUI Server] Error resuming process on Windows: {e}")
+        return False
+
+
 def terminate_conversion(proc):
     if proc.poll() is not None: return
-    if os.name != "nt": os.killpg(proc.pid, signal.SIGTERM)
-    else: subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True)
+    if os.name != "nt":
+        try:
+            os.killpg(proc.pid, signal.SIGCONT)
+        except Exception:
+            pass
+        os.killpg(proc.pid, signal.SIGTERM)
+        time.sleep(0.2)
+        if proc.poll() is None:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except Exception:
+                pass
+    else:
+        subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True)
+
+
+HISTORY_FILE = DEFAULT_OUTPUT_DIR / "history.json"
+
+
+def load_history() -> list[dict]:
+    if not HISTORY_FILE.exists():
+        return []
+    try:
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            items = json.load(f)
+        for item in items:
+            out_p = Path(item.get("output_path", ""))
+            depth_p = Path(item.get("depth_path", "")) if item.get("depth_path") else None
+            item["output_exists"] = out_p.exists() and out_p.stat().st_size > 0
+            item["depth_exists"] = bool(depth_p and depth_p.exists() and depth_p.stat().st_size > 0)
+        return items
+    except Exception as e:
+        print(f"[History] Error reading history: {e}")
+        return []
+
+
+def save_history(items: list[dict]):
+    DEFAULT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        tmp_file = HISTORY_FILE.with_suffix(".tmp")
+        with open(tmp_file, "w", encoding="utf-8") as f:
+            json.dump(items, f, indent=2)
+        tmp_file.replace(HISTORY_FILE)
+    except Exception as e:
+        print(f"[History] Error saving history: {e}")
+
+
+def add_history_entry(entry: dict):
+    items = load_history()
+    items = [it for it in items if it.get("output_path") != entry.get("output_path")]
+    items.insert(0, entry)
+    save_history(items[:50])
+
+
+def delete_history_entry(entry_id: str) -> bool:
+    items = load_history()
+    orig_len = len(items)
+    items = [it for it in items if it.get("id") != entry_id]
+    if len(items) < orig_len:
+        save_history(items)
+        return True
+    return False
+
+
+def clear_history():
+    if HISTORY_FILE.exists():
+        try:
+            HISTORY_FILE.unlink()
+        except Exception:
+            pass
 
 
 @app.post("/api/start-conversion")
@@ -382,7 +520,37 @@ async def stop_conversion():
     conversion_state["cancel_requested"] = True
     proc = conversion_state.get("process")
     if proc: terminate_conversion(proc)
-    return {"status": "stopping" if conversion_state["status"] == "running" else "not_running"}
+    return {"status": "stopping" if conversion_state["status"] in ("running", "paused") else "not_running"}
+
+
+@app.post("/api/pause-conversion")
+async def pause_active_conversion():
+    with state_lock:
+        if conversion_state["status"] != "running":
+            return JSONResponse(status_code=400, content={"error": "Conversion is not running"})
+        proc = conversion_state.get("process")
+        if not proc or proc.poll() is not None:
+            return JSONResponse(status_code=400, content={"error": "No active process"})
+        if pause_conversion(proc):
+            conversion_state["status"] = "paused"
+            conversion_state["log"] = "Conversion paused by user."
+            return {"status": "paused"}
+        return JSONResponse(status_code=500, content={"error": "Failed to pause process"})
+
+
+@app.post("/api/resume-conversion")
+async def resume_active_conversion():
+    with state_lock:
+        if conversion_state["status"] != "paused":
+            return JSONResponse(status_code=400, content={"error": "Conversion is not paused"})
+        proc = conversion_state.get("process")
+        if not proc or proc.poll() is not None:
+            return JSONResponse(status_code=400, content={"error": "No active process"})
+        if resume_conversion(proc):
+            conversion_state["status"] = "running"
+            conversion_state["log"] = "Conversion resumed."
+            return {"status": "running"}
+        return JSONResponse(status_code=500, content={"error": "Failed to resume process"})
 
 
 @app.get("/api/status")
@@ -484,3 +652,40 @@ async def open_output():
         open_in_system(Path(out))
         return {"status": "ok"}
     return {"error": "File not found"}
+
+
+@app.get("/api/history")
+async def get_conversion_history():
+    """Returns list of past conversions with existence status and depth map flags."""
+    return {"history": load_history()}
+
+
+@app.delete("/api/history/{entry_id}")
+async def remove_history_entry(entry_id: str):
+    """Removes a conversion entry from history."""
+    if delete_history_entry(entry_id):
+        return {"status": "deleted"}
+    return JSONResponse(status_code=404, content={"error": "Entry not found"})
+
+
+@app.post("/api/history/clear")
+async def clear_all_history():
+    """Clears all conversion history."""
+    clear_history()
+    return {"status": "cleared"}
+
+
+@app.post("/api/open-path")
+async def open_specific_path(request: Request):
+    """Opens a specified media file or folder on the local system."""
+    try:
+        data = await request.json()
+    except Exception:
+        data = {}
+    path_str = data.get("path")
+    if path_str:
+        p = Path(path_str)
+        if p.exists():
+            open_in_system(p)
+            return {"status": "ok"}
+    return JSONResponse(status_code=404, content={"error": "File not found"})
