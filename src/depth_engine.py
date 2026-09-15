@@ -21,27 +21,74 @@ class TemporalDepthFilter:
         self.alpha = float(np.clip(alpha, 0.0, 0.95))
         self.cut_threshold = cut_threshold
         self.prev_depth: Optional[np.ndarray] = None
+        self.prev_gray: Optional[np.ndarray] = None
 
     def reset(self):
         self.prev_depth = None
+        self.prev_gray = None
 
-    def filter(self, current_depth: np.ndarray, is_scene_cut: bool = False) -> np.ndarray:
+    def filter(
+        self,
+        current_depth: np.ndarray,
+        rgb: Optional[np.ndarray] = None,
+        is_scene_cut: bool = False
+    ) -> np.ndarray:
+        gray = None
+        if rgb is not None:
+            gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
         if self.prev_depth is None or self.alpha <= 0.0 or is_scene_cut:
             self.prev_depth = current_depth.copy()
+            self.prev_gray = None if gray is None else gray.copy()
             return current_depth
 
-        # Calculate absolute difference to preserve fast motion edges
-        diff = np.abs(current_depth - self.prev_depth)
+        aligned_previous = self.prev_depth
+        confidence = 1.0
+        if gray is not None and self.prev_gray is not None:
+            # Track scene content at quarter resolution.  Warping the previous
+            # depth into the current frame prevents a moving object from
+            # inheriting the background depth that occupied the same pixels.
+            h, w = gray.shape
+            flow_w, flow_h = max(32, w // 4), max(24, h // 4)
+            current_small = cv2.resize(gray, (flow_w, flow_h), interpolation=cv2.INTER_AREA)
+            previous_small = cv2.resize(self.prev_gray, (flow_w, flow_h), interpolation=cv2.INTER_AREA)
+            flow = cv2.calcOpticalFlowFarneback(
+                current_small, previous_small, None, 0.5, 3, 15, 3, 5, 1.1, 0
+            )
+            flow = cv2.resize(flow, (w, h), interpolation=cv2.INTER_LINEAR)
+            flow[..., 0] *= w / flow_w
+            flow[..., 1] *= h / flow_h
+            grid_x, grid_y = np.meshgrid(
+                np.arange(w, dtype=np.float32), np.arange(h, dtype=np.float32)
+            )
+            map_x = grid_x + flow[..., 0]
+            map_y = grid_y + flow[..., 1]
+            aligned_previous = cv2.remap(
+                self.prev_depth, map_x, map_y, cv2.INTER_LINEAR,
+                borderMode=cv2.BORDER_REPLICATE
+            )
+            previous_gray_aligned = cv2.remap(
+                self.prev_gray, map_x, map_y, cv2.INTER_LINEAR,
+                borderMode=cv2.BORDER_REPLICATE
+            )
+            photometric_error = np.abs(gray.astype(np.float32) - previous_gray_aligned.astype(np.float32))
+            confidence = np.exp(-photometric_error / 24.0)
+
+        # Preserve newly revealed regions and fast-changing object boundaries.
+        diff = np.abs(current_depth - aligned_previous)
 
         # Automatic scene cut detection: if average depth change is drastic, reset
-        if np.mean(diff) > self.cut_threshold:
+        image_cut = gray is not None and self.prev_gray is not None and np.mean(
+            np.abs(gray.astype(np.float32) - self.prev_gray.astype(np.float32))
+        ) > 55.0
+        if np.mean(diff) > self.cut_threshold or image_cut:
             self.prev_depth = current_depth.copy()
+            self.prev_gray = None if gray is None else gray.copy()
             return current_depth
 
-        # Adapt alpha: lower smoothing where there is rapid movement to prevent ghosting
-        adaptive_alpha = self.alpha * np.exp(-diff * 3.0)
-        smoothed = adaptive_alpha * self.prev_depth + (1.0 - adaptive_alpha) * current_depth
+        adaptive_alpha = self.alpha * np.exp(-diff * 4.0) * confidence
+        smoothed = adaptive_alpha * aligned_previous + (1.0 - adaptive_alpha) * current_depth
         self.prev_depth = smoothed.copy()
+        self.prev_gray = None if gray is None else gray.copy()
         return smoothed
 
 class DepthDecimator:
@@ -102,6 +149,34 @@ class DepthEngine:
         self.model = load_depth_model(self.model_path, self.device)
         print("[DepthEngine] Model ready for high-fidelity offline inference.")
 
+    @staticmethod
+    def regularize_depth(rgb: np.ndarray, depth: np.ndarray, radius: int = 9) -> np.ndarray:
+        """Smooth object interiors while keeping disparity discontinuities on RGB edges."""
+        guide = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
+        source = depth.astype(np.float32)
+        size = (radius * 2 + 1, radius * 2 + 1)
+        mean_i = cv2.boxFilter(guide, -1, size, borderType=cv2.BORDER_REFLECT)
+        mean_p = cv2.boxFilter(source, -1, size, borderType=cv2.BORDER_REFLECT)
+        corr_i = cv2.boxFilter(guide * guide, -1, size, borderType=cv2.BORDER_REFLECT)
+        corr_ip = cv2.boxFilter(guide * source, -1, size, borderType=cv2.BORDER_REFLECT)
+        var_i = corr_i - mean_i * mean_i
+        cov_ip = corr_ip - mean_i * mean_p
+        a = cov_ip / (var_i + 2.5e-3)
+        b = mean_p - a * mean_i
+        mean_a = cv2.boxFilter(a, -1, size, borderType=cv2.BORDER_REFLECT)
+        mean_b = cv2.boxFilter(b, -1, size, borderType=cv2.BORDER_REFLECT)
+        guided = mean_a * guide + mean_b
+
+        # Flat-color interiors (especially animation) should move as coherent
+        # surfaces. Preserve the guided result around visible outlines.
+        grad_x = cv2.Scharr(guide, cv2.CV_32F, 1, 0)
+        grad_y = cv2.Scharr(guide, cv2.CV_32F, 0, 1)
+        edge_strength = cv2.GaussianBlur(cv2.magnitude(grad_x, grad_y), (0, 0), 1.2)
+        edge_weight = np.clip(edge_strength / 2.0, 0.0, 1.0)
+        interior = cv2.bilateralFilter(guided.astype(np.float32), 9, 0.08, 7)
+        result = edge_weight * guided + (1.0 - edge_weight) * (0.25 * guided + 0.75 * interior)
+        return np.clip(result, 0.0, 1.0).astype(np.float32)
+
     def _prepare_tensor(self, rgb_image: np.ndarray) -> Tuple[torch.Tensor, Tuple[int, int]]:
         """
         Resize image to multiples of 14 matching target patch_size while preserving aspect ratio.
@@ -160,8 +235,9 @@ class DepthEngine:
             else:
                 depth_norm = np.zeros_like(depth_np, dtype=np.float32)
 
+            depth_norm = self.regularize_depth(rgb_images[i], depth_norm)
             if apply_temporal_smoothing:
-                depth_norm = self.temporal_filter.filter(depth_norm)
+                depth_norm = self.temporal_filter.filter(depth_norm, rgb=rgb_images[i])
 
             depth_maps.append(depth_norm.astype(np.float32))
 
