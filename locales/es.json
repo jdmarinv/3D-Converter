@@ -33,7 +33,10 @@
     "status_browse_error": "No se pudo abrir el selector. Pega la ruta completa en el campo del archivo.",
     "status_single_file": "Arrastra un solo archivo a la vez.",
     "status_busy": "Espera a que termine el proceso actual.",
-    "status_browser_hidden": "El navegador ocultó la ruta. Selecciona el archivo original en el diálogo; no se copiará."
+    "status_browser_hidden": "El navegador ocultó la ruta. Selecciona el archivo original en el diálogo; no se copiará.",
+    "preview_pause": "Ocultar y pausar el preview en vivo",
+    "preview_resume": "Reanudar el preview en vivo",
+    "preview_paused": "Preview en vivo pausado para liberar potencia"
   },
   "presets": {
     "title": "Presets de Conversión",
@@ -192,6 +195,10 @@
     "reexport_hint": "Reexportación Rápida: Renderiza el nuevo formato estéreo en segundos sin recalcular la IA de profundidad.",
     "btn_open": "Reproducir 3D",
     "btn_folder": "Ver en Carpeta",
+    "btn_load_settings": "Cargar ajustes",
+    "load_settings_hint": "Carga el archivo fuente y todos los ajustes guardados para repetir o modificar esta conversión.",
+    "settings_loaded": "Fuente y ajustes cargados. Modifica los tiempos del clip si lo necesitas.",
+    "thumbnail_alt": "Miniatura de la conversión",
     "btn_delete": "Eliminar del historial",
     "confirm_clear": "¿Estás seguro de que deseas limpiar el historial de conversiones?",
     "reexport_title": "Reexportación Rápida 3D",

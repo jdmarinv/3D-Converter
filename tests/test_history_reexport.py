@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
+import cv2
+import numpy as np
 from gui import server
 
 class TestHistoryReexport(unittest.TestCase):
@@ -115,6 +117,27 @@ class TestHistoryReexport(unittest.TestCase):
             res = asyncio.run(server.open_specific_path(req))
             self.assertEqual(res, {"status": "ok"})
             mock_open.assert_called_once()
+
+        reveal_req = FakeRequest({"path": str(test_file), "reveal": True})
+        with patch("gui.server.reveal_in_system") as mock_reveal:
+            res = asyncio.run(server.open_specific_path(reveal_req))
+            self.assertEqual(res, {"status": "ok"})
+            mock_reveal.assert_called_once_with(test_file)
+
+    def test_history_thumbnail_is_generated_in_memory(self):
+        image_path = self.tmp_path / "converted.png"
+        image = np.zeros((90, 160, 3), dtype=np.uint8)
+        image[:, :80] = (20, 80, 220)
+        image[:, 80:] = (220, 180, 20)
+        self.assertTrue(cv2.imwrite(str(image_path), image))
+        server.add_history_entry({"id": "thumb_1", "output_path": str(image_path)})
+
+        response = asyncio.run(server.get_history_thumbnail("thumb_1"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.media_type, "image/jpeg")
+        self.assertTrue(response.body.startswith(b"\xff\xd8"))
+        self.assertFalse(any(self.tmp_path.glob("*thumbnail*")))
 
 if __name__ == "__main__":
     unittest.main()

@@ -33,7 +33,10 @@
     "status_browse_error": "Could not open file picker. Paste the full path directly into the input field.",
     "status_single_file": "Please drop a single file at a time.",
     "status_busy": "Please wait for current conversion to finish.",
-    "status_browser_hidden": "Browser hid the file path. Select the file using the browse dialog; it will not be copied."
+    "status_browser_hidden": "Browser hid the file path. Select the file using the browse dialog; it will not be copied.",
+    "preview_pause": "Hide and pause live preview",
+    "preview_resume": "Resume live preview",
+    "preview_paused": "Live preview paused to save processing power"
   },
   "presets": {
     "title": "Conversion Presets",
@@ -192,6 +195,10 @@
     "reexport_hint": "Fast Re-export: Renders new stereo format in seconds without recomputing AI depth.",
     "btn_open": "Play 3D Media",
     "btn_folder": "Show in Folder",
+    "btn_load_settings": "Load Settings",
+    "load_settings_hint": "Load the source file and every saved setting so this conversion can be repeated or adjusted.",
+    "settings_loaded": "Source and conversion settings loaded. Adjust the clip times if needed.",
+    "thumbnail_alt": "Conversion thumbnail",
     "btn_delete": "Remove from history",
     "confirm_clear": "Are you sure you want to clear the conversion history?",
     "reexport_title": "Fast 3D Re-export",

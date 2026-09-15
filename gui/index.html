@@ -516,6 +516,37 @@
       backdrop-filter: blur(8px);
     }
 
+    .frame-preview-toggle {
+      position: absolute;
+      z-index: 2;
+      top: 12px;
+      right: 12px;
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 9px;
+      color: #fff;
+      background: rgba(3, 7, 18, 0.82);
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+    }
+
+    .frame-preview-toggle:hover { background: rgba(30, 41, 59, 0.95); }
+    .frame-preview-toggle svg { width: 17px; height: 17px; }
+    .frame-preview.preview-paused img { visibility: hidden; }
+    .frame-preview-paused-message {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .frame-preview.preview-paused .frame-preview-paused-message { display: grid; }
+
     .file-input-row {
       display: flex;
       gap: 10px;
@@ -1245,6 +1276,33 @@
       transition: all var(--trans-fast);
     }
 
+    .history-item-body {
+      display: grid;
+      grid-template-columns: 132px minmax(0, 1fr);
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .history-thumbnail {
+      width: 132px;
+      height: 82px;
+      display: block;
+      align-self: center;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      background: #030712;
+    }
+
+    .history-item-content {
+      min-width: 0;
+    }
+
+    @media (max-width: 560px) {
+      .history-item-body { grid-template-columns: 96px minmax(0, 1fr); }
+      .history-thumbnail { width: 96px; height: 64px; }
+    }
+
     .history-item:hover {
       border-color: rgba(99, 102, 241, 0.35);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
@@ -1717,6 +1775,10 @@
         <div class="frame-preview" id="frame-preview">
           <img id="frame-preview-image" alt="Current source frame">
           <div class="frame-preview-badge" id="frame-preview-badge">Frame 0</div>
+          <div class="frame-preview-paused-message" data-i18n="media.preview_paused">Live preview paused to save processing power</div>
+          <button type="button" class="frame-preview-toggle" id="btn-toggle-frame-preview" data-i18n-title="media.preview_pause" title="Hide and pause live preview" aria-label="Hide and pause live preview">
+            <svg id="frame-preview-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5 0 9 4 10 8a12.7 12.7 0 0 1-2 3.8"/><path d="M6.6 6.6A12.4 12.4 0 0 0 2 12c1 4 5 8 10 8a10.7 10.7 0 0 0 3.4-.6"/></svg>
+          </button>
         </div>
 
         <div class="file-input-row">
@@ -2269,10 +2331,47 @@
     const framePreview = document.getElementById('frame-preview');
     const framePreviewImage = document.getElementById('frame-preview-image');
     const framePreviewBadge = document.getElementById('frame-preview-badge');
+    const btnToggleFramePreview = document.getElementById('btn-toggle-frame-preview');
+    const framePreviewToggleIcon = document.getElementById('frame-preview-toggle-icon');
+    const framePreviewPausedMessage = framePreview.querySelector('.frame-preview-paused-message');
+    let framePreviewEnabled = true;
     framePreviewImage.addEventListener('load', () => {
       const frame = framePreviewImage.dataset.requestedFrame;
       const total = framePreviewImage.dataset.totalFrames;
       framePreviewBadge.textContent = total ? `Frame ${frame} / ${total}` : `Frame ${frame}`;
+    });
+
+    function setFramePreviewEnabled(enabled) {
+      framePreviewEnabled = enabled;
+      framePreview.classList.toggle('preview-paused', !enabled);
+      const labelKey = enabled ? 'media.preview_pause' : 'media.preview_resume';
+      const translatedLabel = t(labelKey);
+      const label = translatedLabel === labelKey
+        ? (currentLang === 'es'
+          ? (enabled ? 'Ocultar y pausar el preview en vivo' : 'Reanudar el preview en vivo')
+          : (enabled ? 'Hide and pause live preview' : 'Resume live preview'))
+        : translatedLabel;
+      const pausedKey = 'media.preview_paused';
+      const translatedPaused = t(pausedKey);
+      framePreviewPausedMessage.textContent = translatedPaused === pausedKey
+        ? (currentLang === 'es' ? 'Preview en vivo pausado para liberar potencia' : 'Live preview paused to save processing power')
+        : translatedPaused;
+      btnToggleFramePreview.title = label;
+      btnToggleFramePreview.setAttribute('aria-label', label);
+      framePreviewToggleIcon.innerHTML = enabled
+        ? '<path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c5 0 9 4 10 8a12.7 12.7 0 0 1-2 3.8"/><path d="M6.6 6.6A12.4 12.4 0 0 0 2 12c1 4 5 8 10 8a10.7 10.7 0 0 0 3.4-.6"/>'
+        : '<polygon points="7 4 20 12 7 20 7 4"/>';
+      if (!enabled) {
+        framePreviewImage.removeAttribute('src');
+      } else {
+        const frame = Math.max(0, Number(framePreview.dataset.frame || 0));
+        framePreviewImage.dataset.requestedFrame = String(frame);
+        framePreviewImage.src = `/api/frame-preview?frame=${frame}&t=${Date.now()}`;
+      }
+    }
+
+    btnToggleFramePreview.addEventListener('click', () => {
+      setFramePreviewEnabled(!framePreviewEnabled);
     });
     const inputPath = document.getElementById('input-path');
     const btnBrowse = document.getElementById('btn-browse');
@@ -2316,6 +2415,7 @@
     const historyList = document.getElementById('history-list');
     const historyCount = document.getElementById('history-count');
     const btnClearHistory = document.getElementById('btn-clear-history');
+    const historyItemsById = new Map();
     let isPaused = false;
     const resultActions = document.getElementById('result-actions');
     const btnOpenFile = document.getElementById('btn-open-file');
@@ -2493,6 +2593,7 @@
         });
         const data = await res.json();
         if (!data.error) {
+          setFramePreviewEnabled(true);
           dropzone.style.display = 'none';
           framePreview.style.display = 'block';
           framePreviewBadge.textContent = data.type === 'video' ? 'Loading frame 0…' : 'Image';
@@ -2658,7 +2759,7 @@
         progressBar.classList.add('active');
         statFrame.textContent = `${data.current_frame} / ${data.total_frames}`;
         const previousPreviewFrame = Number(framePreview.dataset.frame || -1);
-        if (data.current_frame >= 0 && data.current_frame !== previousPreviewFrame) {
+        if (framePreviewEnabled && data.current_frame >= 0 && data.current_frame !== previousPreviewFrame) {
           framePreview.dataset.frame = data.current_frame;
           framePreviewImage.dataset.requestedFrame = String(data.current_frame);
           framePreviewImage.dataset.totalFrames = String(data.total_frames);
@@ -2723,6 +2824,17 @@
         progressBar.classList.remove('active');
         progressBar.classList.remove('paused');
         logTerminal.textContent = data.log || "An error occurred.";
+      } else if (data.status === 'idle' && data.cancel_requested) {
+        btnStart.style.display = 'inline-flex';
+        btnStart.disabled = selectingFile;
+        activeControlsRow.style.display = 'none';
+        resultActions.style.display = 'none';
+        statusLabel.textContent = t('monitor.status_cancelled') || 'Cancelled';
+        statusLabel.style.color = '#fbbf24';
+        progressBar.classList.remove('active', 'paused');
+        statFps.textContent = '0.0 fps';
+        statEta.textContent = '--:--';
+        logTerminal.textContent = data.log || 'Cancelled.';
       }
     }
 
@@ -2805,7 +2917,7 @@
 
     async function setLanguage(langCode) {
       try {
-        const res = await fetch(`/api/locales/${langCode}`);
+        const res = await fetch(`/api/locales/${langCode}`, { cache: 'no-store' });
         translations = await res.json();
         currentLang = langCode;
         localStorage.setItem('preferred_language', langCode);
@@ -2820,7 +2932,7 @@
 
     async function populateLanguages() {
       try {
-        const res = await fetch('/api/locales');
+        const res = await fetch('/api/locales', { cache: 'no-store' });
         const list = await res.json();
         const select = document.getElementById('lang-select');
         select.innerHTML = list.map(loc => 
@@ -3000,6 +3112,8 @@
         const res = await fetch('/api/history');
         const data = await res.json();
         const items = data.history || [];
+        historyItemsById.clear();
+        items.forEach(item => historyItemsById.set(String(item.id), item));
         if (historyCount) historyCount.textContent = items.length;
 
         if (!historyList) return;
@@ -3037,29 +3151,43 @@
             </button>
           ` : '';
 
+          const loadSettingsBtn = item.input_path ? `
+            <button class="btn-hist-action btn-hist-reexport" onclick="loadHistorySettingsById('${escapeJs(String(item.id))}')" title="${escapeHtml(t('history.load_settings_hint'))}">
+              <svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 3 3 9 9 9"/></svg>
+              <span>${t('history.btn_load_settings')}</span>
+            </button>
+          ` : '';
+
           const outFilename = (item.output_path || '').split('/').pop() || 'media';
           const formatUpper = (item.format || 'HSBS').toUpperCase();
           const metaSub = `${item.date_str || ''} ${item.resolution ? '· ' + item.resolution : ''} ${item.duration ? '· ' + item.duration + 's' : ''}`;
 
+          const thumbnailUrl = `/api/history/${encodeURIComponent(item.id)}/thumbnail`;
           return `
             <div class="history-item">
-              <div class="history-item-top">
-                <div class="history-file-info">
-                  <div class="history-filename" title="${escapeHtml(item.output_path)}">${escapeHtml(outFilename)}</div>
-                  <div class="history-meta-sub">${escapeHtml(metaSub)}</div>
+              <div class="history-item-body">
+                <img class="history-thumbnail" src="${thumbnailUrl}" loading="lazy" alt="${escapeHtml(t('history.thumbnail_alt'))}">
+                <div class="history-item-content">
+                  <div class="history-item-top">
+                    <div class="history-file-info">
+                      <div class="history-filename" title="${escapeHtml(item.output_path)}">${escapeHtml(outFilename)}</div>
+                      <div class="history-meta-sub">${escapeHtml(metaSub)}</div>
+                    </div>
+                    <button class="btn-reset-text" style="color: var(--text-dim); font-size: 11px; padding: 2px 6px;" onclick="deleteHistoryItem('${escapeJs(item.id)}')" title="${escapeHtml(t('history.btn_delete'))}">✕</button>
+                  </div>
+                  <div class="history-tags-row">
+                    <span class="tag-format">${escapeHtml(formatUpper)}</span>
+                    <span class="tag-chip">${escapeHtml(item.depth_profile || 'balanced')}</span>
+                    <span class="tag-chip">3D: ${escapeHtml(String(item.strength_3d || 5.0))}</span>
+                    ${depthBadge}
+                  </div>
+                  <div class="history-actions-row">
+                    ${loadSettingsBtn}
+                    ${playBtn}
+                    ${folderBtn}
+                    ${reexportBtn}
+                  </div>
                 </div>
-                <button class="btn-reset-text" style="color: var(--text-dim); font-size: 11px; padding: 2px 6px;" onclick="deleteHistoryItem('${escapeJs(item.id)}')" title="${escapeHtml(t('history.btn_delete'))}">✕</button>
-              </div>
-              <div class="history-tags-row">
-                <span class="tag-format">${escapeHtml(formatUpper)}</span>
-                <span class="tag-chip">${escapeHtml(item.depth_profile || 'balanced')}</span>
-                <span class="tag-chip">3D: ${escapeHtml(String(item.strength_3d || 5.0))}</span>
-                ${depthBadge}
-              </div>
-              <div class="history-actions-row">
-                ${playBtn}
-                ${folderBtn}
-                ${reexportBtn}
               </div>
             </div>
           `;
@@ -3114,6 +3242,67 @@
       } catch (err) {
         console.error("Error revealing path:", err);
       }
+    }
+
+    async function loadHistorySettings(itemJson) {
+      try {
+        const item = typeof itemJson === 'string' ? JSON.parse(itemJson) : itemJson;
+        if (!item.input_path) return;
+
+        inputPath.value = item.input_path;
+        await probeFile(item.input_path);
+        const operationSelect = document.getElementById('operation');
+        operationSelect.value = item.operation || 'convert';
+        operationSelect.dispatchEvent(new Event('change'));
+
+        if (item.format) formatSelect.value = item.format;
+        if (item.render_mode) renderModeSelect.value = item.render_mode;
+        if (item.style_3d) styleSelect.value = item.style_3d;
+        if (item.depth_profile) depthProfileSelect.value = item.depth_profile;
+        if (item.depth_stride) depthStrideSelect.value = String(item.depth_stride);
+        if (item.temporal_smooth !== undefined) {
+          smoothingSelect.value = Number(item.temporal_smooth).toFixed(2);
+        }
+
+        const strength = Number(item.strength_3d);
+        if (Number.isFinite(strength)) {
+          sliderStrength.value = String(strength);
+          valStrength.textContent = strength.toFixed(1);
+          updateSliderFill(sliderStrength);
+        }
+        const convergence = Number(item.convergence);
+        if (Number.isFinite(convergence)) {
+          sliderConvergence.value = String(convergence);
+          valConvergence.textContent = convergence.toFixed(2);
+          updateSliderFill(sliderConvergence);
+        }
+
+        currentProfile = item.profile || null;
+        presetButtons.forEach(button => {
+          const selected = Boolean(currentProfile && button.dataset.preset === currentProfile);
+          button.classList.toggle('active', selected);
+          button.setAttribute('aria-checked', selected ? 'true' : 'false');
+        });
+
+        inputStartTime.value = Number(item.start_time || 0);
+        inputDuration.value = Number(item.clip_duration || 0);
+        chkCrop.checked = item.auto_crop === true;
+        chkSaveDepth.checked = item.save_depth === true;
+        document.getElementById('check-cadence').checked = item.check_cadence === true;
+        chkCustomDepth.checked = false;
+        customDepthBox.style.display = 'none';
+        customDepthPath.value = '';
+        document.getElementById('import-status').textContent = t('history.settings_loaded');
+        const mediaCardTitle = document.getElementById('media-card-title');
+        if (mediaCardTitle) mediaCardTitle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (err) {
+        console.error('Error loading conversion settings:', err);
+      }
+    }
+
+    function loadHistorySettingsById(id) {
+      const item = historyItemsById.get(String(id));
+      if (item) loadHistorySettings(item);
     }
 
     function reexportConversion(itemJson) {

@@ -64,6 +64,32 @@ class TestPauseResume(unittest.TestCase):
             proc.kill()
             self.fail("Paused process did not terminate promptly.")
 
+    @unittest.skipIf(os.name == "nt", "POSIX process-group behavior")
+    def test_terminate_kills_child_after_parent_exits_on_sigterm(self):
+        script = (
+            "import signal,subprocess,sys,time; "
+            "child=subprocess.Popen([sys.executable,'-c',"
+            "'import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(60)']); "
+            "print(child.pid,flush=True); time.sleep(60)"
+        )
+        proc = subprocess.Popen(
+            [sys.executable, "-c", script], stdout=subprocess.PIPE,
+            text=True, start_new_session=True
+        )
+        child_pid = int(proc.stdout.readline().strip())
+        proc.stdout.close()
+        server.terminate_conversion(proc)
+        proc.wait(timeout=2.0)
+        for _ in range(20):
+            try:
+                os.kill(child_pid, 0)
+            except ProcessLookupError:
+                break
+            time.sleep(0.05)
+        else:
+            os.kill(child_pid, signal.SIGKILL)
+            self.fail("Child encoder survived conversion cancellation")
+
     def test_pause_resume_api_endpoints(self):
         # When idle: pausing should return 400
         res = asyncio.run(server.pause_active_conversion())

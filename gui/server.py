@@ -62,6 +62,8 @@ conversion_state = {
 
 selected_media = {"path": "", "fps": 0.0}
 preview_lock = threading.Lock()
+history_thumbnail_cache: dict[str, tuple[int, int, bytes]] = {}
+history_thumbnail_lock = threading.Lock()
 
 class ConversionRequest(BaseModel):
     operation: Literal["convert", "repair"] = "convert"
@@ -251,9 +253,21 @@ state_lock = threading.Lock()
 def resolve_output(req):
     source = Path(req.input_path).expanduser().resolve()
     is_video = source.suffix.lower() in {".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v"}
+    def time_label(value: float) -> str:
+        return f"{value:g}".replace(".", "p")
+    clip_tag = ""
+    if is_video and req.duration > 0:
+        clip_tag = f"_{time_label(req.start_time)}s-{time_label(req.start_time + req.duration)}s"
     suffix = ("_repaired.mp4" if req.operation == "repair" else
-              ("_3d_spatial.mov" if req.format == "spatial" else f"_3d_{req.format}.mp4")) if is_video else f"_3d_{req.format}{source.suffix}"
+              (f"{clip_tag}_3d_spatial.mov" if req.format == "spatial" else f"{clip_tag}_3d_{req.format}.mp4")) if is_video else f"_3d_{req.format}{source.suffix}"
     output = Path(req.output_path).expanduser().resolve() if req.output_path else DEFAULT_OUTPUT_DIR / (source.stem + suffix)
+    if not req.output_path and output.exists():
+        base_stem = output.stem
+        for index in range(2, 10000):
+            candidate = output.with_name(f"{base_stem}_{index}{output.suffix}")
+            if not candidate.exists():
+                output = candidate
+                break
     return source, output, is_video
 
 
@@ -347,14 +361,24 @@ def run_conversion_worker(req):
                     "output_path": str(out_p),
                     "depth_path": str(depth_p) if depth_p and depth_p.exists() else "",
                     "has_depth": bool(depth_p and depth_p.exists()),
+                    "operation": req.operation,
                     "format": req.format,
+                    "profile": req.profile,
+                    "render_mode": req.render_mode,
                     "strength_3d": req.strength_3d if req.strength_3d is not None else 5.0,
                     "style_3d": req.style_3d or "natural",
                     "depth_profile": req.depth_profile or "balanced",
                     "depth_stride": req.depth_stride or 1,
+                    "convergence": req.convergence,
+                    "temporal_smooth": req.temporal_smooth,
+                    "auto_crop": req.auto_crop,
+                    "save_depth": req.save_depth,
+                    "check_cadence": req.check_cadence,
+                    "start_time": req.start_time,
+                    "clip_duration": req.duration,
                     "total_frames": conversion_state.get("total_frames", 0),
                     "resolution": f"{selected_media.get('width', 0)}x{selected_media.get('height', 0)}" if selected_media else "",
-                    "duration": round(float(selected_media.get("duration", 0.0) or 0.0), 1)
+                    "duration": round(float(req.duration or selected_media.get("duration", 0.0) or 0.0), 1)
                 }
                 add_history_entry(history_entry)
             except Exception as e:
@@ -413,19 +437,28 @@ def resume_conversion(proc) -> bool:
 
 
 def terminate_conversion(proc):
-    if proc.poll() is not None: return
     if os.name != "nt":
+        # The conversion process starts a new session, so its PID is also the
+        # process-group ID inherited by FFmpeg encoders/readers. The Python
+        # parent can exit before FFmpeg reacts to SIGTERM; always target the
+        # group even when proc.poll() already reports that the parent exited.
+        process_group = proc.pid
         try:
-            os.killpg(proc.pid, signal.SIGCONT)
+            os.killpg(process_group, signal.SIGCONT)
         except Exception:
             pass
-        os.killpg(proc.pid, signal.SIGTERM)
-        time.sleep(0.2)
-        if proc.poll() is None:
-            try:
-                os.killpg(proc.pid, signal.SIGKILL)
-            except Exception:
-                pass
+        try:
+            os.killpg(process_group, signal.SIGTERM)
+        except ProcessLookupError:
+            return
+        # Give encoders a moment to flush, then kill the group unconditionally.
+        # Checking the group with signal 0 can raise EPERM on macOS after the
+        # session leader exits even while an orphaned FFmpeg is still alive.
+        time.sleep(0.75)
+        try:
+            os.killpg(process_group, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
     else:
         subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True)
 
@@ -518,9 +551,18 @@ async def start_conversion(req: ConversionRequest):
 @app.post("/api/stop-conversion")
 async def stop_conversion():
     conversion_state["cancel_requested"] = True
+    conversion_state.update(status="stopping", log="Stopping conversion…", eta="")
     proc = conversion_state.get("process")
     if proc: terminate_conversion(proc)
-    return {"status": "stopping" if conversion_state["status"] in ("running", "paused") else "not_running"}
+    for key in ("output_file", "depth_file"):
+        partial = conversion_state.get(key)
+        if partial:
+            try:
+                Path(partial).unlink(missing_ok=True)
+            except OSError as exc:
+                print(f"[GUI Server] Could not remove cancelled {key}: {exc}")
+    conversion_state.update(status="idle", log="Cancelled.", fps=0.0, eta="")
+    return {"status": "cancelled"}
 
 
 @app.post("/api/pause-conversion")
@@ -637,6 +679,20 @@ def open_in_system(path: Path):
     except Exception as e:
         print(f"[GUI] Error opening path {path}: {e}")
 
+
+def reveal_in_system(path: Path):
+    """Reveal a file in the platform file manager without launching the media."""
+    os_name = detect_os()
+    try:
+        if os_name == "macos":
+            subprocess.run(["open", "-R", str(path)])
+        elif os_name == "windows":
+            subprocess.run(["explorer", "/select,", str(path)])
+        elif os_name == "linux":
+            subprocess.run(["xdg-open", str(path.parent)])
+    except Exception as e:
+        print(f"[GUI] Error revealing path {path}: {e}")
+
 @app.post("/api/open-folder")
 async def open_folder():
     """Opens output directory in OS file manager."""
@@ -658,6 +714,57 @@ async def open_output():
 async def get_conversion_history():
     """Returns list of past conversions with existence status and depth map flags."""
     return {"history": load_history()}
+
+
+@app.get("/api/history/{entry_id}/thumbnail")
+async def get_history_thumbnail(entry_id: str):
+    """Generate an in-memory JPEG thumbnail for a recorded conversion."""
+    item = next((it for it in load_history() if it.get("id") == entry_id), None)
+    if not item:
+        return Response(status_code=404)
+    media = Path(item.get("output_path", ""))
+    if not media.is_file():
+        return Response(status_code=404)
+
+    stat = media.stat()
+    cache_key = str(media)
+    with history_thumbnail_lock:
+        cached = history_thumbnail_cache.get(cache_key)
+        if cached and cached[0] == stat.st_mtime_ns and cached[1] == stat.st_size:
+            return Response(cached[2], media_type="image/jpeg",
+                            headers={"Cache-Control": "private, max-age=300"})
+
+    image_exts = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"}
+    if media.suffix.lower() in image_exts:
+        import cv2
+        image = cv2.imread(str(media))
+        if image is None:
+            return Response(status_code=404)
+        height, width = image.shape[:2]
+        scale = min(320 / width, 180 / height, 1.0)
+        image = cv2.resize(image, (max(1, round(width * scale)), max(1, round(height * scale))),
+                           interpolation=cv2.INTER_AREA)
+        ok, encoded = cv2.imencode(".jpg", image, [cv2.IMWRITE_JPEG_QUALITY, 82])
+        jpeg = encoded.tobytes() if ok else b""
+    else:
+        duration = float(item.get("duration", 0.0) or 0.0)
+        timestamp = min(30.0, max(0.5, duration * 0.10)) if duration else 1.0
+        result = subprocess.run([
+            str(BIN_DIR / "ffmpeg"), "-hide_banner", "-loglevel", "error",
+            "-ss", f"{timestamp:.3f}", "-i", str(media), "-frames:v", "1",
+            "-vf", "thumbnail=24,scale=320:180:force_original_aspect_ratio=decrease",
+            "-q:v", "5", "-f", "image2pipe", "-vcodec", "mjpeg", "-"
+        ], capture_output=True, timeout=20)
+        jpeg = result.stdout if result.returncode == 0 else b""
+    if not jpeg:
+        return Response(status_code=404)
+
+    with history_thumbnail_lock:
+        history_thumbnail_cache[cache_key] = (stat.st_mtime_ns, stat.st_size, jpeg)
+        if len(history_thumbnail_cache) > 50:
+            history_thumbnail_cache.pop(next(iter(history_thumbnail_cache)))
+    return Response(jpeg, media_type="image/jpeg",
+                    headers={"Cache-Control": "private, max-age=300"})
 
 
 @app.delete("/api/history/{entry_id}")
@@ -686,6 +793,9 @@ async def open_specific_path(request: Request):
     if path_str:
         p = Path(path_str)
         if p.exists():
-            open_in_system(p)
+            if data.get("reveal"):
+                reveal_in_system(p)
+            else:
+                open_in_system(p)
             return {"status": "ok"}
     return JSONResponse(status_code=404, content={"error": "File not found"})

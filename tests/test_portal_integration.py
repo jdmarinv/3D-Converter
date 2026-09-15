@@ -27,12 +27,21 @@ class PortalIntegration(unittest.TestCase):
     def run_worker(self, **kwargs):
         req=server.ConversionRequest(input_path=str(self.source),output_path=str(self.root/'out.mp4'),**kwargs)
         server.conversion_state.update(output_file=req.output_path,status='running')
-        server.run_conversion_worker(req)
+        with patch.object(server, 'add_history_entry'):
+            server.run_conversion_worker(req)
         self.assertEqual(server.conversion_state['status'],'completed',server.conversion_state['log'])
         return Path(req.output_path)
     def test_portal_defaults_to_symmetric_stereo(self):
         req=server.ConversionRequest(input_path=str(self.source))
         self.assertEqual(req.render_mode,'both')
+    def test_clip_output_name_preserves_existing_conversion(self):
+        req=server.ConversionRequest(input_path=str(self.source),start_time=9,duration=6)
+        with patch.object(server,'DEFAULT_OUTPUT_DIR',self.root):
+            _, first, _=server.resolve_output(req)
+            self.assertEqual(first.name,'source_9s-15s_3d_hsbs.mp4')
+            first.touch()
+            _, second, _=server.resolve_output(req)
+            self.assertEqual(second.name,'source_9s-15s_3d_hsbs_2.mp4')
     def test_repair_real_worker(self):
         out=self.run_worker(operation='repair',repair_layout='2d',duration=1)
         self.assertEqual(get_media_info(out)['nb_frames'],24)
