@@ -5,6 +5,7 @@ Handles black bar detection (cropdetect), metadata extraction, and streaming fra
 import subprocess
 import json
 import re
+import time
 from pathlib import Path
 from typing import Dict, Any, Generator, Tuple, Optional
 import numpy as np
@@ -20,10 +21,11 @@ def parse_rational_fraction(s: Optional[str]) -> Optional[Tuple[int, int]]:
     if "/" in s:
         parts = s.split("/")
         try:
-            num, den = int(parts[0]), int(parts[1])
-            if den > 0:
+            num = int(parts[0])
+            den = int(parts[1])
+            if den != 0:
                 return num, den
-        except (ValueError, ZeroDivisionError):
+        except ValueError:
             return None
     else:
         try:
@@ -54,7 +56,15 @@ def get_media_info(file_path: Path) -> Dict[str, Any]:
         "-of", "json",
         str(file_path)
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    result = None
+    for attempt in range(4):
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0 and result.stdout.strip():
+            break
+        time.sleep(0.3)
+    else:
+        err = result.stderr.strip() if result else "unknown error"
+        raise RuntimeError(f"ffprobe failed on {file_path}: {err or 'Exit code ' + str(result.returncode)}")
     data = json.loads(result.stdout)
     
     stream = data.get("streams", [{}])[0]

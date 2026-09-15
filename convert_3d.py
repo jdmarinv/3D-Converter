@@ -356,13 +356,16 @@ def process_video(
     # Cadence diagnosis if requested
     if check_cadence and fmt in ("sbs", "hsbs"):
         print("\n[Diagnostics] Running Visual Cadence & Temporal Continuity Audit...")
-        report = analyze_visual_cadence(input_path, output_path, fmt=fmt,
-                                        start_time=start_time, crop_filter=crop_filter)
-        import json
-        report_path = output_path.with_suffix(output_path.suffix + ".cadence.json")
-        report_path.write_text(json.dumps(report, indent=2))
-        print("PORTAL_CADENCE " + json.dumps(report), flush=True)
-        print_report(report)
+        try:
+            report = analyze_visual_cadence(input_path, output_path, fmt=fmt,
+                                            start_time=start_time, crop_filter=crop_filter)
+            import json
+            report_path = output_path.with_suffix(output_path.suffix + ".cadence.json")
+            report_path.write_text(json.dumps(report, indent=2))
+            print("PORTAL_CADENCE " + json.dumps(report), flush=True)
+            print_report(report)
+        except Exception as e:
+            print(f"[Warning] Visual cadence diagnostic could not complete: {e}", flush=True)
 
 PROFILES = {
     "balanced": {"divergence": 0.025, "convergence": 0.50, "pop_out": 0.0, "temporal_smooth": 0.65},
