@@ -1510,24 +1510,23 @@
         </div>
 
         <div class="file-input-row">
-          <label for="operation" data-i18n="cadence.operation">Operación</label>
+          <label for="operation" data-i18n="cadence.operation">Operation</label>
           <select id="operation" class="text-input">
-            <option value="convert" data-i18n="cadence.convert">Convertir 2D a 3D</option>
-            <option value="repair" data-i18n="cadence.repair">Reparar tirones de un video existente</option>
+            <option value="convert" data-i18n="cadence.convert">Convert 2D to 3D</option>
+            <option value="repair" data-i18n="cadence.repair">Repair stutter in an existing video</option>
           </select>
         </div>
         <div id="repair-options" hidden>
-          <label for="repair-layout" data-i18n="cadence.layout">Formato del video de entrada</label>
+          <label for="repair-layout" data-i18n="cadence.layout">Input video layout</label>
           <select id="repair-layout" class="text-input">
             <option value="hsbs">Half SBS</option>
             <option value="sbs">Full SBS</option>
             <option value="2d">2D</option>
           </select>
-          <p data-i18n="cadence.hint">Interpola movimiento a los mismos fps, conserva ambos ojos y el audio.
-          Prueba un tramo corto primero: puede introducir deformaciones.</p>
+          <p data-i18n="cadence.hint">Interpolates motion at the same frame rate, preserving both eyes and audio. Test a short clip first: motion artifacts are possible.</p>
         </div>
         <label id="cadence-option"><input type="checkbox" id="check-cadence" checked>
-          <span data-i18n="cadence.check">Comprobar continuidad del movimiento al terminar (SBS)</span></label>
+          <span data-i18n="cadence.check">Check motion continuity after conversion (SBS)</span></label>
         <!-- Trimming for quick preview -->
         <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-subtle);">
           <div class="control-label">
@@ -2145,10 +2144,10 @@
         if (data.path) {
           inputPath.value = data.path;
           await probeFile(data.path);
-          document.getElementById('import-status').textContent = 'Usando el archivo original, sin copiarlo.';
+          document.getElementById('import-status').textContent = t('media.status_using_original');
         }
       } catch (error) {
-        document.getElementById('import-status').textContent = 'No se pudo abrir el selector. Pega la ruta completa en el campo del archivo.';
+        document.getElementById('import-status').textContent = t('media.status_browse_error');
       } finally {
         selectingFile = false;
         btnBrowse.disabled = false;
@@ -2173,8 +2172,8 @@
       if (!transfer) return;
       const files = transfer.files;
       const status = document.getElementById('import-status');
-      if (files.length > 1) { status.textContent = 'Arrastra un solo archivo a la vez.'; return; }
-      if (btnStart.disabled) { status.textContent = 'Espera a que termine el proceso actual.'; return; }
+      if (files.length > 1) { status.textContent = t('media.status_single_file'); return; }
+      if (btnStart.disabled) { status.textContent = t('media.status_busy'); return; }
       let path = files[0] && files[0].path;
       if (!path) {
         const text = (transfer.getData('text/uri-list') || transfer.getData('text/plain')).trim();
@@ -2189,9 +2188,9 @@
       if (path) {
         inputPath.value = path;
         await probeFile(path);
-        status.textContent = 'Usando el archivo original, sin copiarlo.';
+        status.textContent = t('media.status_using_original');
       } else if (files.length) {
-        status.textContent = 'El navegador ocultó la ruta. Selecciona el archivo original en el diálogo; no se copiará.';
+        status.textContent = t('media.status_browser_hidden');
         btnBrowse.click();
       }
     });
@@ -2396,7 +2395,7 @@
     // ==========================================
     // Internationalization (i18n) Engine
     // ==========================================
-    let currentLang = localStorage.getItem('preferred_language') || 'en';
+    let currentLang = localStorage.getItem('preferred_language') || (navigator.language && navigator.language.startsWith('es') ? 'es' : 'en');
     let translations = {};
 
     function lookupKey(data, key) {

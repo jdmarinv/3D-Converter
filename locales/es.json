@@ -28,7 +28,12 @@
     "info_fps": "FPS",
     "info_dur": "Duración",
     "info_audio": "Audio",
-    "probe_error": "No se pudo inspeccionar el archivo multimedia."
+    "probe_error": "No se pudo inspeccionar el archivo multimedia.",
+    "status_using_original": "Usando el archivo original, sin copiarlo.",
+    "status_browse_error": "No se pudo abrir el selector. Pega la ruta completa en el campo del archivo.",
+    "status_single_file": "Arrastra un solo archivo a la vez.",
+    "status_busy": "Espera a que termine el proceso actual.",
+    "status_browser_hidden": "El navegador ocultó la ruta. Selecciona el archivo original en el diálogo; no se copiará."
   },
   "presets": {
     "title": "Presets de Conversión",
@@ -105,12 +110,17 @@
     "status_completed": "¡Completado!",
     "status_error": "Error",
     "status_cancelled": "Cancelado",
+    "status_paused": "En Pausa",
     "stat_frame": "Fotograma",
     "stat_fps": "Velocidad",
     "stat_eta": "Tiempo Restante",
     "log_ready": "Listo para iniciar. Selecciona un archivo y presiona Iniciar Conversión.",
-    "btn_start": "Iniciar procesamiento",
+    "log_paused": "Conversión pausada por el usuario.",
+    "log_resumed": "Conversión reanudada.",
+    "btn_start": "Iniciar Conversión 3D",
     "btn_cancel": "Cancelar Conversión",
+    "btn_pause": "Pausar",
+    "btn_resume": "Reanudar",
     "btn_play": "Reproducir 3D",
     "btn_open_folder": "Abrir Carpeta",
     "log_success": "✓ Proceso terminado con éxito.\nArchivo 3D: {output_file}\n{depth_file}"
@@ -168,5 +178,20 @@
     "layout": "Formato del video de entrada",
     "hint": "Interpola movimiento a los mismos fps, conservando ambos ojos y el audio. Prueba un tramo corto primero: puede introducir deformaciones.",
     "check": "Comprobar continuidad del movimiento al terminar (SBS)"
+  },
+  "history": {
+    "title": "Historial de Conversiones",
+    "subtitle": "Conversiones pasadas y centro de reexportación instantánea de formatos",
+    "empty": "Aún no hay conversiones registradas. Convierte tu primer archivo para verlo aquí.",
+    "btn_clear": "Limpiar Historial",
+    "badge_depth_ready": "Mapa de Profundidad Disponible",
+    "btn_reexport": "Reexportar Formato...",
+    "reexport_hint": "Reexportación Rápida: Renderiza el nuevo formato estéreo en segundos sin recalcular la IA de profundidad.",
+    "btn_open": "Reproducir 3D",
+    "btn_folder": "Ver en Carpeta",
+    "btn_delete": "Eliminar del historial",
+    "confirm_clear": "¿Estás seguro de que deseas limpiar el historial de conversiones?",
+    "reexport_title": "Reexportación Rápida 3D",
+    "reexport_banner": "⚡ Reexportación Rápida Activa: ¡Mapa de profundidad precargado! Selecciona tu formato objetivo y haz clic en Iniciar Conversión 3D."
   }
 }

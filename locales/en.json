@@ -28,7 +28,12 @@
     "info_fps": "FPS",
     "info_dur": "Duration",
     "info_audio": "Audio",
-    "probe_error": "Could not inspect media file."
+    "probe_error": "Could not inspect media file.",
+    "status_using_original": "Using original file, without copying.",
+    "status_browse_error": "Could not open file picker. Paste the full path directly into the input field.",
+    "status_single_file": "Please drop a single file at a time.",
+    "status_busy": "Please wait for current conversion to finish.",
+    "status_browser_hidden": "Browser hid the file path. Select the file using the browse dialog; it will not be copied."
   },
   "presets": {
     "title": "Conversion Presets",
@@ -105,12 +110,17 @@
     "status_completed": "Completed!",
     "status_error": "Error",
     "status_cancelled": "Cancelled",
+    "status_paused": "Paused",
     "stat_frame": "Frame",
     "stat_fps": "Speed",
     "stat_eta": "Remaining Time",
     "log_ready": "Ready to start. Select a file and click Start 3D Conversion.",
-    "btn_start": "Start Processing",
+    "log_paused": "Conversion paused by user.",
+    "log_resumed": "Conversion resumed.",
+    "btn_start": "Start 3D Conversion",
     "btn_cancel": "Cancel Conversion",
+    "btn_pause": "Pause",
+    "btn_resume": "Resume",
     "btn_play": "Play 3D Media",
     "btn_open_folder": "Open Folder",
     "log_success": "✓ Process finished successfully.\n3D File: {output_file}\n{depth_file}"
@@ -168,5 +178,20 @@
     "layout": "Input video layout",
     "hint": "Interpolates motion at the same frame rate, preserving both eyes and audio. Test a short clip first: motion artifacts are possible.",
     "check": "Check motion continuity after conversion (SBS)"
+  },
+  "history": {
+    "title": "Conversion History",
+    "subtitle": "Past conversions & instant format re-export hub",
+    "empty": "No past conversions yet. Convert your first media to see it here.",
+    "btn_clear": "Clear History",
+    "badge_depth_ready": "Depth Map Available",
+    "btn_reexport": "Re-export Format...",
+    "reexport_hint": "Fast Re-export: Renders new stereo format in seconds without recomputing AI depth.",
+    "btn_open": "Play 3D Media",
+    "btn_folder": "Show in Folder",
+    "btn_delete": "Remove from history",
+    "confirm_clear": "Are you sure you want to clear the conversion history?",
+    "reexport_title": "Fast 3D Re-export",
+    "reexport_banner": "⚡ Fast Re-export Active: AI depth map is pre-loaded! Select your target format and click Start 3D Conversion."
   }
 }
