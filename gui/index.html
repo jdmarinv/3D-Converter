@@ -1,0 +1,2419 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2D to 3D Studio - Offline Stereoscopic & Spatial Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    /* ==========================================================================
+       DESIGN SYSTEM TOKENS & THEMING (UI/UX PRO MAX STANDARD)
+       ========================================================================== */
+    :root {
+      /* Backgrounds */
+      --bg-base: #070a13;
+      --bg-surface-glass: rgba(14, 21, 37, 0.72);
+      --bg-surface-elevated: rgba(22, 33, 58, 0.85);
+      --bg-surface-hover: rgba(29, 44, 77, 0.9);
+      --bg-input: rgba(9, 14, 26, 0.88);
+      --bg-terminal: #03060f;
+
+      /* Borders & Outlines */
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-medium: rgba(99, 102, 241, 0.22);
+      --border-accent: rgba(99, 102, 241, 0.55);
+      --border-focus: #6366f1;
+
+      /* Accent & Brand Gradients */
+      --accent-primary: #6366f1;
+      --accent-primary-light: #818cf8;
+      --accent-cyan: #06b6d4;
+      --accent-cyan-light: #38bdf8;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #3b82f6 50%, #06b6d4 100%);
+      --accent-gradient-hover: linear-gradient(135deg, #4f46e5 0%, #2563eb 50%, #0891b2 100%);
+      --accent-glow: rgba(99, 102, 241, 0.35);
+
+      /* Semantic Status Colors */
+      --status-success: #10b981;
+      --status-success-bg: rgba(16, 185, 129, 0.12);
+      --status-success-border: rgba(16, 185, 129, 0.3);
+      --status-warning: #f59e0b;
+      --status-warning-bg: rgba(245, 158, 11, 0.12);
+      --status-warning-border: rgba(245, 158, 11, 0.35);
+      --status-danger: #ef4444;
+      --status-danger-bg: rgba(239, 68, 68, 0.12);
+      --status-danger-border: rgba(239, 68, 68, 0.35);
+
+      /* Typography */
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --text-dim: #475569;
+
+      /* Radii */
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 22px;
+      --radius-full: 9999px;
+
+      /* Elevation & Shadows */
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+      --shadow-lg: 0 20px 45px -10px rgba(0, 0, 0, 0.7);
+      --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.28);
+      --shadow-glow-cyan: 0 0 20px rgba(6, 182, 212, 0.25);
+
+      /* Transitions */
+      --trans-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+      --trans-normal: 250ms cubic-bezier(0.16, 1, 0.3, 1);
+      --trans-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Reset & Core Setup */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      color-scheme: dark;
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background-image:
+        radial-gradient(ellipse 800px 500px at 10% -5%, rgba(99, 102, 241, 0.16) 0%, transparent 60%),
+        radial-gradient(ellipse 900px 600px at 90% 105%, rgba(6, 182, 212, 0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 600px 400px at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 70%);
+      background-attachment: fixed;
+    }
+
+    /* Accessibility Focus Rings */
+    :focus-visible {
+      outline: 2px solid var(--border-focus);
+      outline-offset: 2px;
+    }
+
+    /* ==========================================================================
+       HEADER & NAVIGATION
+       ========================================================================== */
+    header {
+      padding: 16px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(7, 10, 19, 0.82);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo-container {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: var(--accent-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-glow);
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .brand-logo-container svg {
+      width: 26px;
+      height: 26px;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    }
+
+    .brand-title-wrap h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-badge {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(99, 102, 241, 0.2);
+      color: var(--accent-primary-light);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      -webkit-text-fill-color: initial;
+    }
+
+    .brand-title-wrap p {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Language Switcher */
+    .lang-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      transition: all var(--trans-fast);
+    }
+
+    .lang-pill:hover {
+      background: rgba(255, 255, 255, 0.09);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .lang-pill svg {
+      width: 15px;
+      height: 15px;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .lang-select {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+      padding-right: 4px;
+    }
+
+    .lang-select option {
+      background: #0f172a;
+      color: #f8fafc;
+    }
+
+    /* Hardware Telemetry Badge */
+    .hardware-badge {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: var(--status-success-bg);
+      border: 1px solid var(--status-success-border);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      color: #34d399;
+      cursor: pointer;
+      transition: all var(--trans-fast);
+      user-select: none;
+    }
+
+    .hardware-badge:hover {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.2);
+    }
+
+    .hardware-badge.warning {
+      background: var(--status-warning-bg);
+      border-color: var(--status-warning-border);
+      color: #fbbf24;
+    }
+
+    .hardware-badge.warning:hover {
+      background: rgba(245, 158, 11, 0.22);
+      border-color: rgba(245, 158, 11, 0.55);
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+    }
+
+    .hardware-badge.error {
+      background: var(--status-danger-bg);
+      border-color: var(--status-danger-border);
+      color: #f87171;
+    }
+
+    .hardware-badge.error:hover {
+      background: rgba(239, 68, 68, 0.22);
+      border-color: rgba(239, 68, 68, 0.55);
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #34d399;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #34d399;
+      animation: pulse 2s infinite ease-in-out;
+      flex-shrink: 0;
+    }
+
+    .hardware-badge.warning .pulse-dot {
+      background-color: #fbbf24;
+      box-shadow: 0 0 10px #fbbf24;
+    }
+
+    .hardware-badge.error .pulse-dot {
+      background-color: #f87171;
+      box-shadow: 0 0 10px #f87171;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.8; }
+    }
+
+    /* ==========================================================================
+       SYSTEM ALERT BANNER
+       ========================================================================== */
+    .system-alert-banner {
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.16) 100%);
+      border-bottom: 1px solid rgba(245, 158, 11, 0.35);
+      padding: 10px 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 13px;
+      color: #fde68a;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      animation: bannerSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .system-alert-banner.error-banner {
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.2) 100%);
+      border-bottom-color: rgba(239, 68, 68, 0.45);
+      color: #fca5a5;
+    }
+
+    .alert-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .alert-content svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    @keyframes bannerSlideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================================================
+       MAIN WORKSPACE LAYOUT
+       ========================================================================== */
+    main {
+      flex: 1;
+      max-width: 1480px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 36px 40px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 28px;
+    }
+
+    @media (max-width: 1080px) {
+      main {
+        grid-template-columns: 1fr;
+        padding: 20px 20px 36px;
+        gap: 24px;
+      }
+      header {
+        padding: 14px 20px;
+      }
+      .system-alert-banner {
+        padding: 10px 20px;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    /* ==========================================================================
+       PANEL CARDS & CONTAINERS
+       ========================================================================== */
+    .panel-card {
+      background: var(--bg-surface-glass);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      box-shadow: var(--shadow-md);
+      margin-bottom: 24px;
+      transition: border-color var(--trans-normal), box-shadow var(--trans-normal);
+    }
+
+    .panel-card:hover {
+      border-color: var(--border-medium);
+      box-shadow: var(--shadow-md), 0 0 20px rgba(99, 102, 241, 0.08);
+    }
+
+    .card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .card-title-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-primary-light);
+      flex-shrink: 0;
+    }
+
+    .card-title-icon svg {
+      width: 16px;
+      height: 16px;
+      stroke-width: 2;
+    }
+
+    /* ==========================================================================
+       SOURCE MEDIA & DROPZONE
+       ========================================================================== */
+    .file-dropzone {
+      border: 2px dashed rgba(99, 102, 241, 0.35);
+      border-radius: var(--radius-md);
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--trans-normal);
+      background: rgba(9, 14, 26, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .file-dropzone:hover,
+    .file-dropzone.dragover {
+      border-color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.08);
+      box-shadow: var(--shadow-glow-cyan);
+      transform: translateY(-1px);
+    }
+
+    .dropzone-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-cyan-light);
+      margin-bottom: 4px;
+      transition: transform var(--trans-normal);
+    }
+
+    .file-dropzone:hover .dropzone-icon-wrap {
+      transform: scale(1.1) translateY(-2px);
+      background: rgba(6, 182, 212, 0.18);
+      border-color: rgba(6, 182, 212, 0.4);
+    }
+
+    .dropzone-icon-wrap svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .file-input-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .text-input {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-size: 13px;
+      outline: none;
+      transition: border-color var(--trans-fast), box-shadow var(--trans-fast);
+      font-family: inherit;
+    }
+
+    .text-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      transition: all var(--trans-fast);
+      font-family: inherit;
+      user-select: none;
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text-primary);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.22);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary:active {
+      transform: translateY(0);
+    }
+
+    /* Media Probing Info Grid */
+    .media-info-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .media-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .info-badge {
+      background: rgba(9, 14, 26, 0.7);
+      border: 1px solid var(--border-subtle);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      transition: border-color var(--trans-fast);
+    }
+
+    .info-badge:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .info-badge .label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .info-badge .value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-cyan-light);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ==========================================================================
+       PRESETS & CONTROLS
+       ========================================================================== */
+    .preset-group {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+
+    @media (max-width: 768px) {
+      .preset-group {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .preset-btn {
+      background: rgba(9, 14, 26, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--trans-normal);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--border-accent);
+      background: rgba(18, 27, 49, 0.8);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .preset-btn.active {
+      background: rgba(99, 102, 241, 0.16);
+      border-color: var(--accent-primary-light);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.35);
+    }
+
+    .preset-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      transition: all var(--trans-fast);
+    }
+
+    .preset-btn.active .preset-icon {
+      background: var(--accent-primary);
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+    }
+
+    .preset-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .preset-btn .name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .preset-btn .desc {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Controls Grid: Format & Render Mode */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    @media (max-width: 640px) {
+      .controls-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .control-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .select-wrapper {
+      position: relative;
+    }
+
+    .select-wrapper::after {
+      content: '';
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 8px;
+      height: 8px;
+      border-right: 2px solid var(--text-muted);
+      border-bottom: 2px solid var(--text-muted);
+      rotate: 45deg;
+      pointer-events: none;
+      transition: transform var(--trans-fast);
+    }
+
+    select.select-custom {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px 32px 10px 14px;
+      color: var(--text-primary);
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      font-family: inherit;
+      transition: border-color var(--trans-fast), box-shadow var(--trans-fast);
+    }
+
+    select.select-custom:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+    }
+
+    .badge-tag {
+      background: rgba(99, 102, 241, 0.18);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: var(--accent-primary-light);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    /* ==========================================================================
+       DYNAMIC GRADIENT RANGE SLIDERS
+       ========================================================================== */
+    .slider-item {
+      margin-bottom: 18px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .slider-header span:first-child {
+      color: var(--text-secondary);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .slider-header svg {
+      width: 14px;
+      height: 14px;
+      color: var(--accent-primary-light);
+    }
+
+    .slider-header .val {
+      font-weight: 700;
+      color: var(--accent-cyan-light);
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(6, 182, 212, 0.12);
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      padding: 1px 8px;
+      border-radius: 4px;
+    }
+
+    input[type=range] {
+      width: 100%;
+      height: 6px;
+      border-radius: 4px;
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.1);
+      transition: background var(--trans-fast);
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.6), 0 2px 5px rgba(0,0,0,0.5);
+      border: 2px solid var(--accent-primary);
+      transition: transform var(--trans-fast), box-shadow var(--trans-fast);
+    }
+
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+      box-shadow: 0 0 18px var(--accent-cyan), 0 2px 6px rgba(0,0,0,0.6);
+      border-color: var(--accent-cyan);
+    }
+
+    input[type=range]::-webkit-slider-thumb:active {
+      transform: scale(1.15);
+    }
+
+    input[type=range]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ffffff;
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+      border: 2px solid var(--accent-primary);
+    }
+
+    /* Options Section & Custom Checkboxes */
+    .options-row {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-top: 20px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .checkbox-label input[type=checkbox] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: var(--bg-input);
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+      margin-top: 2px;
+      transition: all var(--trans-fast);
+    }
+
+    .checkbox-label input[type=checkbox]:checked {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary-light);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+    }
+
+    .checkbox-label input[type=checkbox]:checked::after {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 2px;
+      width: 4px;
+      height: 8px;
+      border: solid #ffffff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    .checkbox-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-left: 30px;
+      margin-top: -6px;
+      line-height: 1.4;
+    }
+
+    /* ==========================================================================
+       RIGHT COLUMN: PROCESSING MONITOR & TELEMETRY
+       ========================================================================== */
+    .progress-container {
+      background: rgba(9, 14, 26, 0.65);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 22px;
+      margin-bottom: 20px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 14px;
+    }
+
+    .progress-header .status-tag {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 3px;
+    }
+
+    .progress-header .status-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent-cyan-light);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .progress-header .percent {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1;
+      letter-spacing: -0.5px;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-bottom: 18px;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent-gradient);
+      border-radius: var(--radius-full);
+      box-shadow: 0 0 16px var(--accent-primary);
+      transition: width 0.25s ease-out;
+      position: relative;
+    }
+
+    .progress-bar-fill.active::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .progress-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    /* Terminal Console */
+    .terminal-wrapper {
+      margin-top: 18px;
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #090e1a;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: none;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+    }
+
+    .terminal-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .terminal-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot.red { background: #ef4444; }
+    .terminal-dot.yellow { background: #f59e0b; }
+    .terminal-dot.green { background: #10b981; }
+
+    .log-terminal {
+      background: var(--bg-terminal);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+      padding: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+      color: #94a3b8;
+      min-height: 90px;
+      max-height: 150px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Action Buttons */
+    .btn-convert {
+      width: 100%;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      background: var(--accent-gradient);
+      color: #ffffff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 25px rgba(99, 102, 241, 0.45);
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    .btn-convert:hover:not(:disabled) {
+      background: var(--accent-gradient-hover);
+      box-shadow: 0 6px 30px rgba(99, 102, 241, 0.65);
+      transform: translateY(-2px);
+    }
+
+    .btn-convert:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-convert:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .btn-cancel {
+      width: 100%;
+      padding: 13px;
+      background: var(--status-danger-bg);
+      border: 1px solid var(--status-danger-border);
+      color: #f87171;
+      border-radius: var(--radius-md);
+      margin-top: 12px;
+    }
+
+    .btn-cancel:hover {
+      background: rgba(239, 68, 68, 0.22);
+      border-color: rgba(239, 68, 68, 0.55);
+      transform: translateY(-1px);
+    }
+
+    .action-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    /* Guidelines / Tips List */
+    .tips-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .tips-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: rgba(9, 14, 26, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .tips-item svg {
+      width: 18px;
+      height: 18px;
+      color: var(--accent-cyan);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* ==========================================================================
+       MODAL DIALOG: SYSTEM DIAGNOSTICS & DRIVERS
+       ========================================================================== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 14, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--trans-normal);
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: #0c1220;
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-lg);
+      max-width: 720px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 32px;
+      box-shadow: var(--shadow-lg), 0 0 40px rgba(99, 102, 241, 0.15);
+      position: relative;
+      transform: scale(0.96) translateY(10px);
+      transition: transform var(--trans-normal);
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: var(--text-secondary);
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--trans-fast);
+    }
+
+    .modal-close-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+      transform: rotate(90deg);
+    }
+
+    .modal-close-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .diag-overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .diag-item-card {
+      background: rgba(14, 21, 37, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .diag-item-card.critical {
+      border-left: 4px solid var(--status-danger);
+    }
+
+    .diag-item-card.recommended {
+      border-left: 4px solid var(--status-warning);
+    }
+
+    .diag-item-card.optional {
+      border-left: 4px solid var(--accent-primary);
+    }
+
+    .diag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .diag-badge.critical {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .diag-badge.recommended {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fde68a;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .diag-badge.optional {
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+    }
+
+    .code-block {
+      background: #04060c;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 10px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--accent-cyan-light);
+      word-break: break-all;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #f1f5f9;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all var(--trans-fast);
+      white-space: nowrap;
+      margin-left: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .copy-btn:hover {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary-light);
+    }
+
+    .diag-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(99, 102, 241, 0.18);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #c7d2fe;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      margin-top: 10px;
+      transition: all var(--trans-fast);
+    }
+
+    .diag-link-btn:hover {
+      background: rgba(99, 102, 241, 0.32);
+      color: #ffffff;
+      border-color: rgba(99, 102, 241, 0.7);
+      transform: translateY(-1px);
+    }
+
+    .diag-link-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Accessibility: Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ==========================================================================
+       TOP APP HEADER
+       ========================================================================== -->
+  <header>
+    <div class="brand-wrap">
+      <div class="brand-logo-container" aria-hidden="true">
+        <!-- SVG 3D Stereoscopic Dual-Lens Viewer -->
+        <svg viewBox="0 0 24 24">
+          <path d="M2 10c0-2.2 1.8-4 4-4h2l2 2h4l2-2h2c2.2 0 4 1.8 4 4v4c0 2.2-1.8 4-4 4h-2l-2-2h-4l-2 2H6c-2.2 0-4-1.8-4-4v-4z" />
+          <circle cx="7" cy="12" r="2.5" />
+          <circle cx="17" cy="12" r="2.5" />
+        </svg>
+      </div>
+      <div class="brand-title-wrap">
+        <h1>
+          <span data-i18n="app.title">2D to 3D Studio</span>
+          <span class="brand-badge">STUDIO</span>
+        </h1>
+        <p data-i18n="app.subtitle">OFFLINE STEREOSCOPIC & SPATIAL ENGINE</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Language Selector -->
+      <div class="lang-pill" title="Switch Interface Language">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="2" y1="12" x2="22" y2="12" />
+          <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
+        <select id="lang-select" class="lang-select" aria-label="Language Selector">
+          <option value="en" selected>English</option>
+          <option value="es">Español</option>
+        </select>
+      </div>
+
+      <!-- Hardware Telemetry Badge -->
+      <div class="hardware-badge" id="hardware-badge" data-i18n-title="header.hw_tooltip" title="Click to view hardware diagnostics & dependencies" role="button" tabindex="0">
+        <span class="pulse-dot" id="pulse-dot"></span>
+        <span id="hardware-status" data-i18n="header.hw_detecting">Detecting hardware...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- System Alert Notification Banner -->
+  <aside id="system-alert-banner" class="system-alert-banner" style="display: none;" role="alert">
+    <div class="alert-content">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+      <span id="alert-banner-text" data-i18n="banner.warning">Hardware Notice: Recommended GPU drivers or accelerations found for your system.</span>
+    </div>
+    <button id="btn-banner-diagnostics" class="btn btn-secondary" style="font-size: 11px; padding: 6px 14px;" data-i18n="banner.btn_view">View Solutions & Downloads</button>
+  </aside>
+
+  <!-- ==========================================================================
+       MAIN WORKSPACE
+       ========================================================================== -->
+  <main>
+    <!-- LEFT COLUMN: INPUTS & PARAMETER TUNING -->
+    <div class="left-col">
+
+      <!-- Card 1: Source Media Input -->
+      <section class="panel-card" aria-labelledby="media-card-title">
+        <div class="card-title" id="media-card-title">
+          <div class="card-title-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+              <line x1="7" y1="2" x2="7" y2="22" />
+              <line x1="17" y1="2" x2="17" y2="22" />
+              <line x1="2" y1="12" x2="22" y2="12" />
+              <line x1="2" y1="7" x2="7" y2="7" />
+              <line x1="2" y1="17" x2="7" y2="17" />
+              <line x1="17" y1="17" x2="22" y2="17" />
+              <line x1="17" y1="7" x2="22" y2="7" />
+            </svg>
+          </div>
+          <span data-i18n="media.source_title">Source Media (2D)</span>
+        </div>
+
+        <div class="file-dropzone" id="dropzone" role="button" tabindex="0" aria-label="Dropzone for video or image">
+          <div class="dropzone-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+          </div>
+          <p style="font-size: 14px; font-weight: 600; color: #f8fafc;" data-i18n="media.dropzone_main">Click or drag a video or image here</p>
+          <p style="font-size: 12px; color: var(--text-muted);" data-i18n="media.dropzone_sub">Supports MP4, MOV, MKV, PNG, JPG (Letterbox detected automatically)</p>
+        </div>
+
+        <div class="file-input-row">
+          <input type="text" id="input-path" class="text-input" data-i18n-placeholder="media.input_placeholder" placeholder="File path (e.g. /path/to/video.mp4)" aria-label="Media File Path">
+          <button id="btn-browse" class="btn btn-secondary" data-i18n="media.btn_browse">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            </svg>
+            <span>Browse...</span>
+          </button>
+        </div>
+
+        <div class="file-input-row">
+          <label for="operation">Operación</label>
+          <select id="operation" class="text-input">
+            <option value="convert">Convertir 2D a 3D</option>
+            <option value="repair">Reparar tirones de un video existente</option>
+          </select>
+        </div>
+        <div id="repair-options" hidden>
+          <label for="repair-layout">Formato del video de entrada</label>
+          <select id="repair-layout" class="text-input">
+            <option value="hsbs">Half SBS</option>
+            <option value="sbs">Full SBS</option>
+            <option value="2d">2D</option>
+          </select>
+          <p>Interpola movimiento a los mismos fps, conserva ambos ojos y el audio.
+          Prueba un tramo corto primero: puede introducir deformaciones.</p>
+        </div>
+        <label id="cadence-option"><input type="checkbox" id="check-cadence" checked>
+          Comprobar continuidad del movimiento al terminar (SBS)</label>
+        <!-- Probed Media Metadata Grid -->
+        <div class="media-info-grid" id="media-info-box" style="display: none;">
+          <div class="info-badge">
+            <div class="label" data-i18n="media.info_res">Resolution</div>
+            <div class="value" id="info-res">-</div>
+          </div>
+          <div class="info-badge">
+            <div class="label" data-i18n="media.info_fps">FPS</div>
+            <div class="value" id="info-fps">-</div>
+          </div>
+          <div class="info-badge">
+            <div class="label" data-i18n="media.info_dur">Duration</div>
+            <div class="value" id="info-dur">-</div>
+          </div>
+          <div class="info-badge">
+            <div class="label" data-i18n="media.info_audio">Audio</div>
+            <div class="value" id="info-audio">-</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Card 2: 3D Presets & Stereoscopic Optics -->
+      <section class="panel-card" aria-labelledby="presets-card-title">
+        <div class="card-title" id="presets-card-title">
+          <div class="card-title-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+          </div>
+          <span data-i18n="presets.title">Conversion Presets</span>
+        </div>
+
+        <!-- Preset Tiles -->
+        <div class="preset-group" role="radiogroup" aria-label="3D Depth Presets">
+          <div class="preset-btn active" data-preset="balanced" role="radio" aria-checked="true" tabindex="0">
+            <div class="preset-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14" />
+                <line x1="4" y1="10" x2="4" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12" y2="3" />
+                <line x1="20" y1="21" x2="20" y2="16" />
+                <line x1="20" y1="12" x2="20" y2="3" />
+                <line x1="1" y1="14" x2="7" y2="14" />
+                <line x1="9" y1="8" x2="15" y2="8" />
+                <line x1="17" y1="16" x2="23" y2="16" />
+              </svg>
+            </div>
+            <div class="name" data-i18n="presets.balanced_name">Balanced</div>
+            <div class="desc" data-i18n="presets.balanced_desc">All-round baseline (0.025)</div>
+          </div>
+
+          <div class="preset-btn" data-preset="cinematic_depth" role="radio" aria-checked="false" tabindex="0">
+            <div class="preset-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 7l-7 5 7 5V7z" />
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+              </svg>
+            </div>
+            <div class="name" data-i18n="presets.cinematic_name">Cinematic Depth</div>
+            <div class="desc" data-i18n="presets.cinematic_desc">Enhanced depth (0.030)</div>
+          </div>
+
+          <div class="preset-btn" data-preset="subtle_parallax" role="radio" aria-checked="false" tabindex="0">
+            <div class="preset-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="22" y1="12" x2="18" y2="12" />
+                <line x1="6" y1="12" x2="2" y2="12" />
+                <line x1="12" y1="6" x2="12" y2="2" />
+                <line x1="12" y1="22" x2="12" y2="18" />
+              </svg>
+            </div>
+            <div class="name" data-i18n="presets.subtle_name">Subtle Parallax</div>
+            <div class="desc" data-i18n="presets.subtle_desc">Comfortable viewing (0.020)</div>
+          </div>
+
+          <div class="preset-btn" data-preset="high_contrast" role="radio" aria-checked="false" tabindex="0">
+            <div class="preset-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+                <path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5" />
+              </svg>
+            </div>
+            <div class="name" data-i18n="presets.contrast_name">High Contrast</div>
+            <div class="desc" data-i18n="presets.contrast_desc">Anime & outlines (0.022)</div>
+          </div>
+        </div>
+
+        <!-- Format & Render Mode Dropdowns -->
+        <div class="controls-grid">
+          <div>
+            <div class="control-label">
+              <span data-i18n="controls.format_label">3D Output Format</span>
+            </div>
+            <div class="select-wrapper">
+              <select id="format-select" class="select-custom">
+                <option value="hsbs" selected data-i18n="controls.format_hsbs">Half-SBS (For 3D TVs & Jellyfin / Plex)</option>
+                <option value="sbs" data-i18n="controls.format_sbs">Full-SBS (For VR Headsets / Meta Quest)</option>
+                <option value="anaglyph" data-i18n="controls.format_anaglyph">Dubois Anaglyph (Red/Cyan 3D Glasses)</option>
+                <option value="spatial" data-i18n="controls.format_spatial">Spatial Video MV-HEVC (Apple Vision Pro)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <div class="control-label">
+              <span data-i18n="controls.render_mode_label">Rendering Mode</span>
+              <span class="badge-tag" data-i18n="controls.render_mode_rec">RECOMMENDED</span>
+            </div>
+            <div class="select-wrapper">
+              <select id="render-mode-select" class="select-custom">
+                <option value="right_only" selected data-i18n="controls.render_mode_right">Standard (Right side only - Left eye pristine)</option>
+                <option value="both" data-i18n="controls.render_mode_both">Symmetric (Both eyes warped)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sliders with Dynamic Track Gradient Fill -->
+        <div class="slider-item">
+          <div class="slider-header">
+            <span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                <line x1="12" y1="22.08" x2="12" y2="12" />
+              </svg>
+              <span data-i18n="controls.slider_divergence">3D Depth Intensity (Parallax)</span>
+            </span>
+            <span class="val" id="val-divergence">0.025</span>
+          </div>
+          <input type="range" id="slider-divergence" min="0.010" max="0.060" step="0.002" value="0.025" aria-label="3D Depth Intensity">
+        </div>
+
+        <div class="slider-item">
+          <div class="slider-header">
+            <span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
+              <span data-i18n="controls.slider_convergence">Convergence Plane (Zero-Parallax)</span>
+            </span>
+            <span class="val" id="val-convergence">0.50</span>
+          </div>
+          <input type="range" id="slider-convergence" min="0.10" max="0.90" step="0.05" value="0.50" aria-label="Convergence Plane">
+        </div>
+
+        <div class="slider-item">
+          <div class="slider-header">
+            <span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12h20M2 12a10 10 0 0 1 18-6M2 12a10 10 0 0 0 18 6" />
+              </svg>
+              <span data-i18n="controls.slider_temporal">Temporal Smoothing (Anti-Flicker)</span>
+            </span>
+            <span class="val" id="val-temporal">0.65</span>
+          </div>
+          <input type="range" id="slider-temporal" min="0.0" max="0.95" step="0.05" value="0.65" aria-label="Temporal Smoothing">
+        </div>
+
+        <!-- Depth Map & Crop Options -->
+        <div class="options-row">
+          <div>
+            <label class="checkbox-label">
+              <input type="checkbox" id="chk-save-depth" checked>
+              <span data-i18n="options.save_depth_label">Save Depth Map (_depth.mp4 / _depth.png)</span>
+            </label>
+            <p class="checkbox-desc" data-i18n="options.save_depth_desc">Saves grayscale depth map for manual editing in Photoshop or DaVinci Resolve.</p>
+          </div>
+
+          <div>
+            <label class="checkbox-label">
+              <input type="checkbox" id="chk-crop" checked>
+              <span data-i18n="options.crop_label">Automatic Black Bar Detection (Letterbox crop)</span>
+            </label>
+            <p class="checkbox-desc" data-i18n="options.crop_desc">Prevents black borders from distorting foreground depth or creating harsh edge seams.</p>
+          </div>
+
+          <div>
+            <label class="checkbox-label">
+              <input type="checkbox" id="chk-custom-depth">
+              <span data-i18n="options.custom_depth_label">Use External Depth Map (Fast Re-export)</span>
+            </label>
+            <div id="custom-depth-box" style="display: none; margin-left: 30px; margin-top: 8px;">
+              <div class="file-input-row" style="margin-top: 4px;">
+                <input type="text" id="custom-depth-path" class="text-input" data-i18n-placeholder="options.custom_depth_placeholder" placeholder="Path to pre-computed or edited depth map" aria-label="Custom Depth Map Path">
+                <button id="btn-browse-depth" class="btn btn-secondary" data-i18n="media.btn_browse">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                  </svg>
+                  <span>Browse...</span>
+                </button>
+              </div>
+              <p style="font-size: 11px; color: #34d399; margin-top: 6px; display: flex; align-items: center; gap: 4px;" data-i18n="options.custom_depth_hint">
+                <svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>Skips AI inference and re-renders stereo in seconds.</span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trimming for quick preview -->
+        <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-subtle);">
+          <div class="control-label">
+            <span data-i18n="options.trim_title">Quick Preview Clip (Optional)</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <input type="number" id="input-start-time" class="text-input" data-i18n-placeholder="options.trim_start_placeholder" placeholder="Start second (e.g. 10)" min="0" aria-label="Start Time">
+            <input type="number" id="input-duration" class="text-input" data-i18n-placeholder="options.trim_duration_placeholder" placeholder="Duration secs (e.g. 10)" min="0" aria-label="Duration">
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- RIGHT COLUMN: PROCESSING MONITOR, TELEMETRY & ENGINE -->
+    <div class="right-col">
+
+      <!-- Card 3: Processing Monitor & Real-Time Telemetry -->
+      <section class="panel-card" aria-labelledby="monitor-card-title">
+        <div class="card-title" id="monitor-card-title">
+          <div class="card-title-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            </svg>
+          </div>
+          <span data-i18n="monitor.title">Processing Monitor</span>
+        </div>
+
+        <div class="progress-container">
+          <div class="progress-header">
+            <div>
+              <div class="status-tag" data-i18n="monitor.status_label">Status</div>
+              <div class="status-name" id="status-label" data-i18n="monitor.status_ready">Ready</div>
+            </div>
+            <div class="percent" id="progress-percent">0%</div>
+          </div>
+
+          <div class="progress-bar-bg" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="progress-bar-fill" id="progress-bar"></div>
+          </div>
+
+          <!-- Telemetry Stats Grid -->
+          <div class="progress-stats-grid">
+            <div class="info-badge">
+              <div class="label" data-i18n="monitor.stat_frame">Frame</div>
+              <div class="value" id="stat-frame">0 / 0</div>
+            </div>
+            <div class="info-badge">
+              <div class="label" data-i18n="monitor.stat_fps">Speed</div>
+              <div class="value" id="stat-fps">0 fps</div>
+            </div>
+            <div class="info-badge">
+              <div class="label" data-i18n="monitor.stat_eta">Remaining Time</div>
+              <div class="value" id="stat-eta">--:--</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminal Console -->
+        <div class="terminal-wrapper">
+          <div class="terminal-header">
+            <div class="terminal-dots">
+              <div class="terminal-dot red"></div>
+              <div class="terminal-dot yellow"></div>
+              <div class="terminal-dot green"></div>
+            </div>
+            <span>console :: pipeline</span>
+            <span style="font-size: 10px; color: var(--text-dim);">SSE stream</span>
+          </div>
+          <div class="log-terminal" id="log-terminal" data-i18n="monitor.log_ready">Ready to start. Select a file and click Start 3D Conversion.</div>
+        </div>
+
+        <!-- Action CTAs -->
+        <button id="btn-start" class="btn btn-convert" data-i18n="monitor.btn_start">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3" />
+          </svg>
+          <span>Start 3D Conversion</span>
+        </button>
+        <button id="btn-cancel" class="btn btn-cancel" style="display: none;" data-i18n="monitor.btn_cancel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="6" width="12" height="12" />
+          </svg>
+          <span>Cancel Conversion</span>
+        </button>
+
+        <!-- Completed Output Actions -->
+        <div class="action-row" id="result-actions" style="display: none;">
+          <button id="btn-open-file" class="btn btn-secondary" style="width: 100%;" data-i18n="monitor.btn_play">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            <span>Play 3D Media</span>
+          </button>
+          <button id="btn-open-folder" class="btn btn-secondary" style="width: 100%;" data-i18n="monitor.btn_open_folder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+            </svg>
+            <span>Open Folder</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Card 4: Quality & Playback Guidelines -->
+      <section class="panel-card" aria-labelledby="tips-card-title">
+        <div class="card-title" id="tips-card-title">
+          <div class="card-title-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z" />
+            </svg>
+          </div>
+          <span data-i18n="tips.title">Tips for Best Quality</span>
+        </div>
+
+        <ul class="tips-list">
+          <li class="tips-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span data-i18n="tips.tip1"><b>Zero Ghosting:</b> <i>Standard (Right only)</i> mode keeps 100% native sharpness on the left eye, completely eliminating warping on subtitles and lines.</span>
+          </li>
+          <li class="tips-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>
+            <span data-i18n="tips.tip2"><b>3D TVs (LG Cinema 3D / Samsung / Sony):</b> Use <b>Half-SBS</b> format. On your TV remote, press 3D and select <i>Side-by-Side</i>.</span>
+          </li>
+          <li class="tips-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 10c0-2.2 1.8-4 4-4h2l2 2h4l2-2h2c2.2 0 4 1.8 4 4v4c0 2.2-1.8 4-4 4h-2l-2-2h-4l-2 2H6c-2.2 0-4-1.8-4-4v-4z"/><circle cx="7" cy="12" r="2.5"/><circle cx="17" cy="12" r="2.5"/></svg>
+            <span data-i18n="tips.tip3"><b>Meta Quest / VR Headsets:</b> Use <b>Full-SBS</b> for maximum sharpness or <b>MV-HEVC</b> for Apple Vision Pro.</span>
+          </li>
+          <li class="tips-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <span data-i18n="tips.tip4"><b>Manual Retouching:</b> Check <i>Save Depth Map</i> to edit tricky scenes in Photoshop/After Effects and re-export in seconds with <i>Fast Re-export</i>.</span>
+          </li>
+        </ul>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- ==========================================================================
+       MODAL DIALOG: SYSTEM DIAGNOSTICS & DRIVER STATUS
+       ========================================================================== -->
+  <div id="diagnostics-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="diag-title">
+    <div class="modal-card">
+      <button id="btn-close-modal" class="modal-close-btn" data-i18n-title="diag.btn_close" title="Close" aria-label="Close Modal">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+
+      <div style="margin-bottom: 24px;">
+        <h2 id="diag-title" style="font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px;">
+          <svg style="width: 22px; height: 22px; color: var(--accent-primary-light);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          <span data-i18n="diag.modal_title">System Diagnostics & Drivers</span>
+        </h2>
+        <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;" data-i18n="diag.modal_subtitle">
+          Cross-platform hardware detection for macOS, Windows, and Linux.
+        </p>
+      </div>
+
+      <!-- 4-Tile Hardware Overview -->
+      <div class="diag-overview-grid">
+        <div class="info-badge" style="padding: 14px;">
+          <div class="label" data-i18n="diag.card_os">Operating System</div>
+          <div class="value" id="diag-os" style="font-size: 13px; margin-top: 4px;">-</div>
+        </div>
+        <div class="info-badge" style="padding: 14px;">
+          <div class="label" data-i18n="diag.card_gpu">AI Accelerator (GPU)</div>
+          <div class="value" id="diag-gpu" style="font-size: 13px; margin-top: 4px; color: var(--accent-cyan-light);">-</div>
+        </div>
+        <div class="info-badge" style="padding: 14px;">
+          <div class="label" data-i18n="diag.card_encoder">Video Encoder</div>
+          <div class="value" id="diag-encoder" style="font-size: 13px; margin-top: 4px; color: #34d399;">-</div>
+        </div>
+        <div class="info-badge" style="padding: 14px;">
+          <div class="label" data-i18n="diag.card_ffmpeg">Multimedia Engine</div>
+          <div class="value" id="diag-ffmpeg" style="font-size: 13px; margin-top: 4px;">-</div>
+        </div>
+      </div>
+
+      <!-- Dependencies & Missing Items Container -->
+      <div style="margin-top: 24px;">
+        <h3 style="font-size: 14px; font-weight: 600; color: #cbd5e1; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+          <svg style="width: 16px; height: 16px; color: var(--accent-primary-light);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <span data-i18n="diag.section_items">Dependencies & Driver Status</span>
+        </h3>
+        <div id="diag-items-container">
+          <div style="text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px;" data-i18n="diag.loading">
+            Querying hardware status...
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+        <button id="btn-modal-dismiss" class="btn btn-secondary" style="font-size: 12px; padding: 8px 20px;" data-i18n="diag.btn_close">Close Window</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       JAVASCRIPT APPLICATION ENGINE
+       ========================================================================== -->
+  <script>
+    // Elements & State
+    const dropzone = document.getElementById('dropzone');
+    const inputPath = document.getElementById('input-path');
+    const btnBrowse = document.getElementById('btn-browse');
+    const mediaInfoBox = document.getElementById('media-info-box');
+    const infoRes = document.getElementById('info-res');
+    const infoFps = document.getElementById('info-fps');
+    const infoDur = document.getElementById('info-dur');
+    const infoAudio = document.getElementById('info-audio');
+
+    const presetButtons = document.querySelectorAll('.preset-btn');
+    const formatSelect = document.getElementById('format-select');
+    const renderModeSelect = document.getElementById('render-mode-select');
+
+    const sliderDivergence = document.getElementById('slider-divergence');
+    const valDivergence = document.getElementById('val-divergence');
+    const sliderConvergence = document.getElementById('slider-convergence');
+    const valConvergence = document.getElementById('val-convergence');
+    const sliderTemporal = document.getElementById('slider-temporal');
+    const valTemporal = document.getElementById('val-temporal');
+
+    const chkSaveDepth = document.getElementById('chk-save-depth');
+    const chkCrop = document.getElementById('chk-crop');
+    const chkCustomDepth = document.getElementById('chk-custom-depth');
+    const customDepthBox = document.getElementById('custom-depth-box');
+    const customDepthPath = document.getElementById('custom-depth-path');
+    const btnBrowseDepth = document.getElementById('btn-browse-depth');
+
+    const inputStartTime = document.getElementById('input-start-time');
+    const inputDuration = document.getElementById('input-duration');
+
+    const btnStart = document.getElementById('btn-start');
+    const btnCancel = document.getElementById('btn-cancel');
+    const resultActions = document.getElementById('result-actions');
+    const btnOpenFile = document.getElementById('btn-open-file');
+    const btnOpenFolder = document.getElementById('btn-open-folder');
+
+    const progressBar = document.getElementById('progress-bar');
+    const progressPercent = document.getElementById('progress-percent');
+    const statusLabel = document.getElementById('status-label');
+    const statFrame = document.getElementById('stat-frame');
+    const statFps = document.getElementById('stat-fps');
+    const statEta = document.getElementById('stat-eta');
+    const logTerminal = document.getElementById('log-terminal');
+
+    let currentProfile = "balanced";
+
+    const PROFILES = {
+      "balanced": { divergence: 0.025, convergence: 0.50, temporal: 0.65 },
+      "cinematic_depth": { divergence: 0.030, convergence: 0.45, temporal: 0.75 },
+      "subtle_parallax": { divergence: 0.020, convergence: 0.50, temporal: 0.50 },
+      "high_contrast": { divergence: 0.022, convergence: 0.50, temporal: 0.70 }
+    };
+
+    // ==========================================
+    // Dynamic Slider Fill Gradient (Pro UX)
+    // ==========================================
+    function updateSliderFill(slider) {
+      const min = parseFloat(slider.min);
+      const max = parseFloat(slider.max);
+      const val = parseFloat(slider.value);
+      const pct = ((val - min) / (max - min)) * 100;
+      slider.style.background = `linear-gradient(to right, #6366f1 0%, #06b6d4 ${pct}%, rgba(255, 255, 255, 0.08) ${pct}%, rgba(255, 255, 255, 0.08) 100%)`;
+    }
+
+    sliderDivergence.addEventListener('input', (e) => {
+      valDivergence.textContent = parseFloat(e.target.value).toFixed(3);
+      updateSliderFill(sliderDivergence);
+    });
+    sliderConvergence.addEventListener('input', (e) => {
+      valConvergence.textContent = parseFloat(e.target.value).toFixed(2);
+      updateSliderFill(sliderConvergence);
+    });
+    sliderTemporal.addEventListener('input', (e) => {
+      valTemporal.textContent = parseFloat(e.target.value).toFixed(2);
+      updateSliderFill(sliderTemporal);
+    });
+
+    // Preset Selection
+    presetButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        presetButtons.forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-checked', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-checked', 'true');
+        currentProfile = btn.dataset.preset;
+        if (PROFILES[currentProfile]) {
+          const p = PROFILES[currentProfile];
+          sliderDivergence.value = p.divergence;
+          valDivergence.textContent = p.divergence.toFixed(3);
+          sliderConvergence.value = p.convergence;
+          valConvergence.textContent = p.convergence.toFixed(2);
+          sliderTemporal.value = p.temporal;
+          valTemporal.textContent = p.temporal.toFixed(2);
+          updateSliderFill(sliderDivergence);
+          updateSliderFill(sliderConvergence);
+          updateSliderFill(sliderTemporal);
+        }
+      });
+    });
+
+    // Initial slider fills
+    updateSliderFill(sliderDivergence);
+    updateSliderFill(sliderConvergence);
+    updateSliderFill(sliderTemporal);
+
+    // Custom depth checkbox toggle
+    chkCustomDepth.addEventListener('change', (e) => {
+      customDepthBox.style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    // File pickers using server native dialogs
+    btnBrowse.addEventListener('click', async () => {
+      const res = await fetch('/api/pick-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'media' })
+      });
+      const data = await res.json();
+      if (data.path) {
+        inputPath.value = data.path;
+        probeFile(data.path);
+      }
+    });
+
+    dropzone.addEventListener('click', () => btnBrowse.click());
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const f = e.dataTransfer.files[0];
+        if (f.path) {
+          inputPath.value = f.path;
+          probeFile(f.path);
+        }
+      }
+    });
+
+    btnBrowseDepth.addEventListener('click', async () => {
+      const res = await fetch('/api/pick-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'depth' })
+      });
+      const data = await res.json();
+      if (data.path) customDepthPath.value = data.path;
+    });
+
+    inputPath.addEventListener('change', () => {
+      if (inputPath.value.trim()) probeFile(inputPath.value.trim());
+    });
+
+    async function probeFile(path) {
+      try {
+        const res = await fetch('/api/probe-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: path })
+        });
+        const data = await res.json();
+        if (!data.error) {
+          mediaInfoBox.style.display = 'grid';
+          infoRes.textContent = `${data.width}x${data.height}`;
+          infoFps.textContent = data.fps > 0 ? `${data.fps} fps` : 'Static';
+          infoDur.textContent = data.duration > 0 ? `${Math.floor(data.duration / 60)}m ${Math.floor(data.duration % 60)}s` : '1 frame';
+          infoAudio.textContent = data.audio ? 'Stereo' : 'No Audio';
+        }
+      } catch (e) {
+        console.error("Probe error:", e);
+      }
+    }
+
+    document.getElementById('operation').addEventListener('change', (event) => {
+      const repair = event.target.value === 'repair';
+      document.getElementById('repair-options').hidden = !repair;
+      document.getElementById('cadence-option').hidden = repair;
+      document.getElementById('presets-card-title').closest('section').hidden = repair;
+    });
+
+    // Start Conversion
+    btnStart.addEventListener('click', async () => {
+      const path = inputPath.value.trim();
+      if (!path) {
+        alert(t('media.dropzone_main') || "Please select a media file first.");
+        return;
+      }
+
+      const payload = {
+        operation: document.getElementById("operation").value,
+        repair_layout: document.getElementById("repair-layout").value,
+        check_cadence: document.getElementById("check-cadence").checked,
+        input_path: path,
+        format: formatSelect.value,
+        profile: currentProfile,
+        render_mode: renderModeSelect.value,
+        depth_intensity: parseFloat(sliderDivergence.value),
+        convergence: parseFloat(sliderConvergence.value),
+        temporal_smooth: parseFloat(sliderTemporal.value),
+        auto_crop: chkCrop.checked,
+        save_depth: chkSaveDepth.checked,
+        custom_depth: chkCustomDepth.checked ? customDepthPath.value.trim() : null,
+        start_time: parseFloat(inputStartTime.value || 0),
+        duration: parseFloat(inputDuration.value || 0)
+      };
+
+      btnStart.disabled = true;
+      btnCancel.style.display = 'inline-flex';
+      resultActions.style.display = 'none';
+      progressBar.classList.add('active');
+
+      try {
+        const res = await fetch('/api/start-conversion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.error) {
+          alert(data.error);
+          btnStart.disabled = false;
+          btnCancel.style.display = 'none';
+          progressBar.classList.remove('active');
+        }
+      } catch (e) {
+        alert("Error starting conversion: " + e);
+        btnStart.disabled = false;
+        btnCancel.style.display = 'none';
+        progressBar.classList.remove('active');
+      }
+    });
+
+    // Cancel Conversion
+    btnCancel.addEventListener('click', async () => {
+      await fetch('/api/stop-conversion', { method: 'POST' });
+      btnCancel.style.display = 'none';
+      btnStart.disabled = false;
+      progressBar.classList.remove('active');
+      statusLabel.textContent = t('monitor.status_cancelled') || 'Cancelled';
+      statusLabel.style.color = '#fbbf24';
+    });
+
+    // Post-conversion action triggers
+    btnOpenFolder.addEventListener('click', () => fetch('/api/open-folder', { method: 'POST' }));
+    btnOpenFile.addEventListener('click', () => fetch('/api/open-output', { method: 'POST' }));
+
+    // Real-Time Progress Stream (SSE)
+    const eventSource = new EventSource('/api/progress-stream');
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+
+      if (data.status === 'running') {
+        btnStart.disabled = true;
+        btnCancel.style.display = 'inline-flex';
+        statusLabel.textContent = t('monitor.status_running');
+        statusLabel.style.color = '#38bdf8';
+        progressPercent.textContent = `${Math.round(data.percent)}%`;
+        progressBar.style.width = `${data.percent}%`;
+        progressBar.classList.add('active');
+        statFrame.textContent = `${data.current_frame} / ${data.total_frames}`;
+        statFps.textContent = `${data.fps.toFixed(1)} fps`;
+        statEta.textContent = data.eta || '--:--';
+        if (data.log) logTerminal.textContent = data.log;
+      } else if (data.status === 'completed') {
+        btnStart.disabled = false;
+        btnCancel.style.display = 'none';
+        resultActions.style.display = 'grid';
+        statusLabel.textContent = t('monitor.status_completed');
+        statusLabel.style.color = '#34d399';
+        progressPercent.textContent = '100%';
+        progressBar.style.width = '100%';
+        progressBar.classList.remove('active');
+        if (data.cadence && data.cadence.stutter_detected) {
+          statusLabel.textContent = 'Completado con advertencia de movimiento';
+          statusLabel.style.color = '#fbbf24';
+        }
+        const depthMsg = data.depth_file ? `Depth Map: ${data.depth_file}` : '';
+        logTerminal.textContent = t('monitor.log_success', {
+          output_file: data.output_file,
+          depth_file: depthMsg
+        });
+        if (data.cadence) logTerminal.textContent += `\nCadencia: ${data.cadence.verdict} · ${data.cadence.introduced_duplicates} repeticiones detectadas en ${data.cadence.total_frames_analyzed} cuadros.`;
+      } else if (data.status === 'error') {
+        btnStart.disabled = false;
+        btnCancel.style.display = 'none';
+        statusLabel.textContent = t('monitor.status_error');
+        statusLabel.style.color = '#f87171';
+        progressBar.classList.remove('active');
+        logTerminal.textContent = data.log || "An error occurred.";
+      }
+    };
+
+    // ==========================================
+    // Internationalization (i18n) Engine
+    // ==========================================
+    let currentLang = localStorage.getItem('preferred_language') || 'en';
+    let translations = {};
+
+    function lookupKey(data, key) {
+      if (!data) return null;
+      const parts = key.split('.');
+      let cur = data;
+      for (const p of parts) {
+        if (cur && typeof cur === 'object' && p in cur) {
+          cur = cur[p];
+        } else {
+          return null;
+        }
+      }
+      return cur;
+    }
+
+    function t(key, params = {}) {
+      let val = lookupKey(translations, key);
+      if (val === null || val === undefined) return key;
+      if (typeof val === 'string' && params) {
+        for (const [k, v] of Object.entries(params)) {
+          val = val.replace(new RegExp(`\\{${k}\\}`, 'g'), v);
+        }
+      }
+      return val;
+    }
+
+    async function applyTranslations() {
+      // 1. Text & HTML nodes
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const val = t(key);
+        if (val && val !== key) {
+          if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+            el.value = val;
+          } else {
+            el.innerHTML = val;
+          }
+        }
+      });
+
+      // 2. Placeholders
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        const val = t(key);
+        if (val && val !== key) el.placeholder = val;
+      });
+
+      // 3. Titles / Tooltips
+      document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        const val = t(key);
+        if (val && val !== key) el.title = val;
+      });
+    }
+
+    async function setLanguage(langCode) {
+      try {
+        const res = await fetch(`/api/locales/${langCode}`);
+        translations = await res.json();
+        currentLang = langCode;
+        localStorage.setItem('preferred_language', langCode);
+        document.documentElement.lang = langCode;
+        await applyTranslations();
+        loadSystemDiagnostics();
+      } catch (err) {
+        console.error("Error setting language:", err);
+      }
+    }
+
+    async function populateLanguages() {
+      try {
+        const res = await fetch('/api/locales');
+        const list = await res.json();
+        const select = document.getElementById('lang-select');
+        select.innerHTML = list.map(loc => 
+          `<option value="${loc.code}" ${loc.code === currentLang ? 'selected' : ''}>${loc.native_name || loc.name}</option>`
+        ).join('');
+        select.value = currentLang;
+      } catch (err) {
+        console.error("Error populating languages:", err);
+      }
+    }
+
+    // ==========================================
+    // System Diagnostics & Hardware Modal
+    // ==========================================
+    const diagnosticsModal = document.getElementById('diagnostics-modal');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const btnModalDismiss = document.getElementById('btn-modal-dismiss');
+    const hardwareBadge = document.getElementById('hardware-badge');
+    const hardwareStatus = document.getElementById('hardware-status');
+    const systemAlertBanner = document.getElementById('system-alert-banner');
+    const alertBannerText = document.getElementById('alert-banner-text');
+    const btnBannerDiagnostics = document.getElementById('btn-banner-diagnostics');
+    const langSelect = document.getElementById('lang-select');
+
+    function openDiagnosticsModal() {
+      diagnosticsModal.classList.add('active');
+    }
+
+    function closeDiagnosticsModal() {
+      diagnosticsModal.classList.remove('active');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function escapeJs(str) {
+      if (!str) return '';
+      return String(str).replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "\\\"");
+    }
+
+    function copyToClipboard(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerHTML;
+        btn.textContent = t('diag.copied');
+        btn.style.background = '#10b981';
+        btn.style.borderColor = '#10b981';
+        btn.style.color = '#ffffff';
+        setTimeout(() => {
+          btn.innerHTML = orig;
+          btn.style.background = '';
+          btn.style.borderColor = '';
+          btn.style.color = '';
+        }, 2000);
+      }).catch(() => {
+        prompt("Copy command:", text);
+      });
+    }
+
+    async function loadSystemDiagnostics() {
+      try {
+        const res = await fetch(`/api/system-diagnostics?lang=${currentLang}`);
+        const data = await res.json();
+
+        // 1. Update Header Badge
+        if (data.gpu_name) {
+          const encShort = (data.encoder_desc || '').split(' ')[0];
+          hardwareStatus.textContent = `${data.gpu_name} • ${encShort}`;
+        }
+
+        hardwareBadge.className = 'hardware-badge';
+        if (data.status === 'warning') {
+          hardwareBadge.classList.add('warning');
+        } else if (data.status === 'error') {
+          hardwareBadge.classList.add('error');
+        }
+
+        // 2. Alert Banner for missing dependencies
+        if (data.status === 'warning' || data.status === 'error') {
+          systemAlertBanner.style.display = 'flex';
+          if (data.status === 'error') {
+            systemAlertBanner.classList.add('error-banner');
+            alertBannerText.textContent = t('banner.error');
+          } else {
+            systemAlertBanner.classList.remove('error-banner');
+            alertBannerText.textContent = t('banner.warning');
+          }
+        } else {
+          systemAlertBanner.style.display = 'none';
+        }
+
+        // 3. Overview Grid
+        document.getElementById('diag-os').textContent = data.os_details || data.os || '-';
+        document.getElementById('diag-gpu').textContent = `${data.gpu_name || '-'} [${data.device || '-'}]`;
+        document.getElementById('diag-encoder').textContent = data.encoder_desc || data.encoder || '-';
+
+        const ffmpegEl = document.getElementById('diag-ffmpeg');
+        if (data.ffmpeg_installed) {
+          ffmpegEl.textContent = t('diag.ffmpeg_active');
+          ffmpegEl.style.color = '#34d399';
+        } else {
+          ffmpegEl.textContent = t('diag.ffmpeg_missing');
+          ffmpegEl.style.color = '#f87171';
+        }
+
+        // 4. Detailed Missing / Recommended Items List
+        const container = document.getElementById('diag-items-container');
+        if (!data.missing_items || data.missing_items.length === 0) {
+          container.innerHTML = `
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-md); padding: 24px; text-align: center;">
+              <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(16, 185, 129, 0.2); display: inline-flex; align-items: center; justify-content: center; color: #34d399; margin-bottom: 8px;">
+                <svg style="width: 24px; height: 24px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div style="font-size: 15px; font-weight: 700; color: #34d399;">${t('diag.all_ok_title')}</div>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 6px; max-width: 500px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+                ${t('diag.all_ok_desc')}
+              </div>
+            </div>
+          `;
+        } else {
+          container.innerHTML = data.missing_items.map(item => {
+            const urgClass = (item.urgency || '').toLowerCase();
+            const badgeLabel = item.urgency === 'CRITICAL' ? t('diag.urgency_critical') :
+                              (item.urgency === 'RECOMMENDED' ? t('diag.urgency_recommended') : t('diag.urgency_optional'));
+
+            const commandHtml = item.command ? `
+              <div class="code-block">
+                <code>${escapeHtml(item.command)}</code>
+                <button class="copy-btn" onclick="copyToClipboard('${escapeJs(item.command)}', this)">
+                  <svg style="width: 12px; height: 12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>${t('diag.copy')}</span>
+                </button>
+              </div>
+            ` : '';
+
+            const urlHtml = item.url ? `
+              <div>
+                <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="diag-link-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  <span>${t('diag.download_official')}</span>
+                  <svg style="width: 11px; height: 11px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                </a>
+              </div>
+            ` : '';
+
+            const instructionsHtml = item.instructions ? `
+              <div style="font-size: 11px; color: #cbd5e1; margin-top: 10px; line-height: 1.5; white-space: pre-line; background: rgba(0,0,0,0.35); padding: 10px 14px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+                <b style="color: #93c5fd;">${t('diag.step_by_step')}</b><br>${escapeHtml(item.instructions)}
+              </div>
+            ` : '';
+
+            return `
+              <div class="diag-item-card ${urgClass}">
+                <div class="diag-badge ${urgClass}">${badgeLabel}</div>
+                <h4 style="font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px;">${escapeHtml(item.item)}</h4>
+                <div style="font-size: 11px; color: var(--accent-primary-light); margin-bottom: 8px; font-weight: 600;">${escapeHtml(item.category || 'General')}</div>
+                <p style="font-size: 12px; color: #cbd5e1; line-height: 1.4; margin-bottom: 8px;">${escapeHtml(item.reason)}</p>
+                ${commandHtml}
+                ${urlHtml}
+                ${instructionsHtml}
+              </div>
+            `;
+          }).join('');
+        }
+
+      } catch (err) {
+        console.error("Error loading system diagnostics:", err);
+      }
+    }
+
+    // Modal Event Bindings
+    hardwareBadge.addEventListener('click', openDiagnosticsModal);
+    hardwareBadge.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') openDiagnosticsModal(); });
+    btnBannerDiagnostics.addEventListener('click', openDiagnosticsModal);
+    btnCloseModal.addEventListener('click', closeDiagnosticsModal);
+    btnModalDismiss.addEventListener('click', closeDiagnosticsModal);
+    diagnosticsModal.addEventListener('click', (e) => {
+      if (e.target === diagnosticsModal) closeDiagnosticsModal();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeDiagnosticsModal();
+    });
+
+    langSelect.addEventListener('change', (e) => {
+      setLanguage(e.target.value);
+    });
+
+    // Initialize Language & Diagnostics on Startup
+    (async function init() {
+      await populateLanguages();
+      await setLanguage(currentLang);
+    })();
+  </script>
+</body>
+
+</html>

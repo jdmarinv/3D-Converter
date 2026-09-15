@@ -1,0 +1,134 @@
+{
+  "__meta__": {
+    "code": "es",
+    "name": "Español",
+    "native_name": "Español"
+  },
+  "app": {
+    "title": "2D to 3D Studio",
+    "subtitle": "MOTOR ESTEREOSCÓPICO Y ESPACIAL OFFLINE"
+  },
+  "header": {
+    "hw_detecting": "Detectando sistema...",
+    "hw_tooltip": "Haz clic para ver diagnóstico de hardware y dependencias",
+    "language": "Idioma"
+  },
+  "banner": {
+    "warning": "Aviso de Hardware: Hay controladores recomendados o aceleraciones pendientes para tu sistema.",
+    "error": "Faltan componentes requeridos (FFmpeg). Es necesario descargarlos para procesar video.",
+    "btn_view": "Ver Soluciones & Descargas"
+  },
+  "media": {
+    "source_title": "Media de Origen (2D)",
+    "dropzone_main": "Haz clic o arrastra un video o imagen aquí",
+    "dropzone_sub": "Soporta MP4, MOV, MKV, PNG, JPG (Letterbox detectado automáticamente)",
+    "input_placeholder": "Ruta del archivo (ej. /Users/.../video.mp4)",
+    "btn_browse": "Examinar...",
+    "info_res": "Resolución",
+    "info_fps": "FPS",
+    "info_dur": "Duración",
+    "info_audio": "Audio",
+    "probe_error": "No se pudo inspeccionar el archivo multimedia."
+  },
+  "presets": {
+    "title": "Presets de Conversión",
+    "balanced_name": "Balanceado",
+    "balanced_desc": "Uso general (0.025)",
+    "cinematic_name": "Profundidad Cinemática",
+    "cinematic_desc": "Mayor relieve (0.030)",
+    "subtle_name": "Paralaje Sutil",
+    "subtle_desc": "Visualización cómoda (0.020)",
+    "contrast_name": "Alto Contraste",
+    "contrast_desc": "Anime y contornos (0.022)"
+  },
+  "controls": {
+    "format_label": "Formato de Salida 3D",
+    "format_hsbs": "Half-SBS (Para TVs 3D y Jellyfin / Plex)",
+    "format_sbs": "Full-SBS (Para Visores VR / Meta Quest)",
+    "format_anaglyph": "Anaglifo Dubois (Gafas Rojo/Cian)",
+    "format_spatial": "Spatial Video MV-HEVC (Apple Vision Pro)",
+    "render_mode_label": "Modo de Renderizado",
+    "render_mode_rec": "RECOMENDADO",
+    "render_mode_right": "Standard (Right side only - Ojo izq. intacto)",
+    "render_mode_both": "Simétrico (Ambos ojos desplazados)",
+    "slider_divergence": "Intensidad de Relieve 3D (Parallax)",
+    "slider_convergence": "Plano de Convergencia (Zero-Parallax)",
+    "slider_temporal": "Suavizado Temporal Anti-Flicker"
+  },
+  "options": {
+    "save_depth_label": "Guardar Mapa de Profundidad (_depth.mp4 / _depth.png)",
+    "save_depth_desc": "Te permite guardar el mapa en escala de grises para retocarlo manualmente en Photoshop o DaVinci Resolve.",
+    "crop_label": "Detección Automática de Barras Negras (Letterbox crop)",
+    "crop_desc": "Evita que los bordes negros deformen el plano frontal o generen cortes artificiales.",
+    "custom_depth_label": "Usar Mapa de Profundidad Externo (Fast Re-export)",
+    "custom_depth_hint": "Salta la IA y re-exporta en segundos.",
+    "custom_depth_placeholder": "Ruta del depth map previo o editado",
+    "trim_title": "Prueba Rápida de Fragmento (Opcional)",
+    "trim_start_placeholder": "Segundo Inicio (ej. 10)",
+    "trim_duration_placeholder": "Duración segs (ej. 10)"
+  },
+  "monitor": {
+    "title": "Monitor de Procesamiento",
+    "status_label": "Estado",
+    "status_ready": "Listo",
+    "status_running": "Procesando...",
+    "status_completed": "¡Completado!",
+    "status_error": "Error",
+    "status_cancelled": "Cancelado",
+    "stat_frame": "Fotograma",
+    "stat_fps": "Velocidad",
+    "stat_eta": "Tiempo Restante",
+    "log_ready": "Listo para iniciar. Selecciona un archivo y presiona Iniciar Conversión.",
+    "btn_start": "Iniciar Conversión 3D",
+    "btn_cancel": "Cancelar Conversión",
+    "btn_play": "Reproducir 3D",
+    "btn_open_folder": "Abrir Carpeta",
+    "log_success": "✓ Proceso terminado con éxito.\nArchivo 3D: {output_file}\n{depth_file}"
+  },
+  "tips": {
+    "title": "Consejos para la Mejor Calidad",
+    "tip1": "<b>Sin Ghosting:</b> El modo <i>Standard (Right only)</i> conserva el 100% de la nitidez nativa en el ojo izquierdo, evitando que textos y líneas se deformen.",
+    "tip2": "<b>Televisores 3D (LG Cinema 3D / Samsung / Sony):</b> Usa el formato <b>Half-SBS</b>. En tu control remoto presiona el botón 3D y selecciona <i>Lado a Lado</i>.",
+    "tip3": "<b>Meta Quest / Visores VR:</b> Puedes usar <b>Full-SBS</b> para máxima nitidez o <b>MV-HEVC</b> para Apple Vision Pro.",
+    "tip4": "<b>Edición manual:</b> Marca <i>Guardar Mapa de Profundidad</i> para retocar máscaras complejas en Photoshop/After Effects y re-exportar en 3 segundos con <i>Fast Re-export</i>."
+  },
+  "diag": {
+    "modal_title": "Diagnóstico & Drivers de Sistema",
+    "modal_subtitle": "Detección multiplataforma automática para macOS, Windows y Linux.",
+    "card_os": "Sistema Operativo",
+    "card_gpu": "Acelerador IA (GPU)",
+    "card_encoder": "Codificador Video",
+    "card_ffmpeg": "Motor Multimedia",
+    "section_items": "Estado de Dependencias & Controladores",
+    "loading": "Consultando estado del hardware...",
+    "btn_close": "Cerrar Ventana",
+    "all_ok_title": "Sistema 100% Optimizado y Listo",
+    "all_ok_desc": "Tu equipo cuenta con aceleración de hardware activa y todas las librerías necesarias. Puedes convertir videos e imágenes a máxima velocidad.",
+    "copy": "Copiar",
+    "copied": "¡Copiado!",
+    "download_official": "Descargar desde Sitio Oficial",
+    "step_by_step": "Paso a paso:",
+    "urgency_critical": "Crítico (Requerido)",
+    "urgency_recommended": "Recomendado (Aceleración GPU)",
+    "urgency_optional": "Opcional (Formatos especiales)",
+    "ffmpeg_active": "FFmpeg Activo",
+    "ffmpeg_missing": "Falta FFmpeg"
+  },
+  "cli": {
+    "title": "2D TO 3D STUDIO - INFORME DE DIAGNÓSTICO DEL SISTEMA",
+    "os": "Sistema Operativo",
+    "gpu": "Acelerador IA (GPU)",
+    "encoder": "Codificador Video",
+    "ffmpeg": "FFmpeg Instalado",
+    "spatial": "Spatial CLI",
+    "status": "Estado General",
+    "all_ok": "✓ ¡Excelente! Todos los componentes y controladores están listos y optimizados.",
+    "missing_header": "⚠️  REQUISITOS O DRIVERS FALTANTES / RECOMENDADOS:",
+    "category": "Categoría",
+    "reason": "Diagnóstico",
+    "command": "Comando",
+    "download": "Descarga Web",
+    "instructions": "Instrucciones",
+    "usage_hint": "Uso básico: python convert_3d.py -i <video_o_imagen> [opciones]\nPara abrir la interfaz gráfica: python gui.py"
+  }
+}

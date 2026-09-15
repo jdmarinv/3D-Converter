@@ -1,0 +1,134 @@
+{
+  "__meta__": {
+    "code": "en",
+    "name": "English",
+    "native_name": "English (US)"
+  },
+  "app": {
+    "title": "2D to 3D Studio",
+    "subtitle": "OFFLINE STEREOSCOPIC & SPATIAL ENGINE"
+  },
+  "header": {
+    "hw_detecting": "Detecting hardware...",
+    "hw_tooltip": "Click to view hardware diagnostics & dependencies",
+    "language": "Language"
+  },
+  "banner": {
+    "warning": "Hardware Notice: Recommended GPU drivers or accelerations found for your system.",
+    "error": "Required components missing (FFmpeg). Download them below to enable video processing.",
+    "btn_view": "View Solutions & Downloads"
+  },
+  "media": {
+    "source_title": "Source Media (2D)",
+    "dropzone_main": "Click or drag a video or image here",
+    "dropzone_sub": "Supports MP4, MOV, MKV, PNG, JPG (Letterbox detected automatically)",
+    "input_placeholder": "File path (e.g. /path/to/video.mp4)",
+    "btn_browse": "Browse...",
+    "info_res": "Resolution",
+    "info_fps": "FPS",
+    "info_dur": "Duration",
+    "info_audio": "Audio",
+    "probe_error": "Could not inspect media file."
+  },
+  "presets": {
+    "title": "Conversion Presets",
+    "balanced_name": "Balanced",
+    "balanced_desc": "All-round baseline (0.025)",
+    "cinematic_name": "Cinematic Depth",
+    "cinematic_desc": "Enhanced depth (0.030)",
+    "subtle_name": "Subtle Parallax",
+    "subtle_desc": "Comfortable viewing (0.020)",
+    "contrast_name": "High Contrast",
+    "contrast_desc": "Anime & outlines (0.022)"
+  },
+  "controls": {
+    "format_label": "3D Output Format",
+    "format_hsbs": "Half-SBS (For 3D TVs & Jellyfin / Plex)",
+    "format_sbs": "Full-SBS (For VR Headsets / Meta Quest)",
+    "format_anaglyph": "Dubois Anaglyph (Red/Cyan 3D Glasses)",
+    "format_spatial": "Spatial Video MV-HEVC (Apple Vision Pro)",
+    "render_mode_label": "Rendering Mode",
+    "render_mode_rec": "RECOMMENDED",
+    "render_mode_right": "Standard (Right side only - Left eye pristine)",
+    "render_mode_both": "Symmetric (Both eyes warped)",
+    "slider_divergence": "3D Depth Intensity (Parallax)",
+    "slider_convergence": "Convergence Plane (Zero-Parallax)",
+    "slider_temporal": "Temporal Smoothing (Anti-Flicker)"
+  },
+  "options": {
+    "save_depth_label": "Save Depth Map (_depth.mp4 / _depth.png)",
+    "save_depth_desc": "Saves grayscale depth map for manual editing in Photoshop or DaVinci Resolve.",
+    "crop_label": "Automatic Black Bar Detection (Letterbox crop)",
+    "crop_desc": "Prevents black borders from distorting foreground depth or creating harsh edge seams.",
+    "custom_depth_label": "Use External Depth Map (Fast Re-export)",
+    "custom_depth_hint": "Skips AI inference and re-renders stereo in seconds.",
+    "custom_depth_placeholder": "Path to pre-computed or edited depth map",
+    "trim_title": "Quick Preview Clip (Optional)",
+    "trim_start_placeholder": "Start second (e.g. 10)",
+    "trim_duration_placeholder": "Duration secs (e.g. 10)"
+  },
+  "monitor": {
+    "title": "Processing Monitor",
+    "status_label": "Status",
+    "status_ready": "Ready",
+    "status_running": "Processing...",
+    "status_completed": "Completed!",
+    "status_error": "Error",
+    "status_cancelled": "Cancelled",
+    "stat_frame": "Frame",
+    "stat_fps": "Speed",
+    "stat_eta": "Remaining Time",
+    "log_ready": "Ready to start. Select a file and click Start 3D Conversion.",
+    "btn_start": "Start 3D Conversion",
+    "btn_cancel": "Cancel Conversion",
+    "btn_play": "Play 3D Media",
+    "btn_open_folder": "Open Folder",
+    "log_success": "✓ Process finished successfully.\n3D File: {output_file}\n{depth_file}"
+  },
+  "tips": {
+    "title": "Tips for Best Quality",
+    "tip1": "<b>Zero Ghosting:</b> <i>Standard (Right only)</i> mode keeps 100% native sharpness on the left eye, completely eliminating warping on subtitles and lines.",
+    "tip2": "<b>3D TVs (LG Cinema 3D / Samsung / Sony):</b> Use <b>Half-SBS</b> format. On your TV remote, press 3D and select <i>Side-by-Side</i>.",
+    "tip3": "<b>Meta Quest / VR Headsets:</b> Use <b>Full-SBS</b> for maximum sharpness or <b>MV-HEVC</b> for Apple Vision Pro.",
+    "tip4": "<b>Manual Retouching:</b> Check <i>Save Depth Map</i> to edit tricky scenes in Photoshop/After Effects and re-export in seconds with <i>Fast Re-export</i>."
+  },
+  "diag": {
+    "modal_title": "System Diagnostics & Drivers",
+    "modal_subtitle": "Cross-platform hardware detection for macOS, Windows, and Linux.",
+    "card_os": "Operating System",
+    "card_gpu": "AI Accelerator (GPU)",
+    "card_encoder": "Video Encoder",
+    "card_ffmpeg": "Multimedia Engine",
+    "section_items": "Dependencies & Driver Status",
+    "loading": "Querying hardware status...",
+    "btn_close": "Close Window",
+    "all_ok_title": "System 100% Optimized and Ready",
+    "all_ok_desc": "Your system has active hardware acceleration and all necessary libraries. You can convert videos and images at maximum speed.",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "download_official": "Download from Official Site",
+    "step_by_step": "Step-by-step:",
+    "urgency_critical": "Critical (Required)",
+    "urgency_recommended": "Recommended (GPU Acceleration)",
+    "urgency_optional": "Optional (Additional formats)",
+    "ffmpeg_active": "FFmpeg Active",
+    "ffmpeg_missing": "Missing FFmpeg"
+  },
+  "cli": {
+    "title": "2D TO 3D STUDIO - SYSTEM DIAGNOSTICS REPORT",
+    "os": "Operating System",
+    "gpu": "AI Accelerator (GPU)",
+    "encoder": "Video Encoder",
+    "ffmpeg": "FFmpeg Installed",
+    "spatial": "Spatial CLI",
+    "status": "Overall Status",
+    "all_ok": "✓ Excellent! All components and drivers are configured and optimized.",
+    "missing_header": "⚠️  MISSING / RECOMMENDED REQUIREMENTS & DRIVERS:",
+    "category": "Category",
+    "reason": "Diagnostics",
+    "command": "Command",
+    "download": "Download Web",
+    "instructions": "Instructions",
+    "usage_hint": "Basic usage: python convert_3d.py -i <video_or_image> [options]\nTo open GUI: python gui.py"
+  }
+}

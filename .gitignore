@@ -1,0 +1,27 @@
+# Python Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Python Bytecode and Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# OS and Editor Metadata
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.idea/
+.vscode/
+
+# Temporary Checkpoint & Intermediate Files
+*.tmp
+output/*.tmp
+output/*.checkpoint.json
+.review-backup*/

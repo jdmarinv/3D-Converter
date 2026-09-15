@@ -1,0 +1,36 @@
+{
+  "corrupt_report": {
+    "verdict": "FAIL_STUTTER_DETECTED",
+    "stutter_detected": true,
+    "total_frames_analyzed": 72,
+    "analyzed_transitions": 71,
+    "native_static_frames": 0,
+    "normal_motion_frames": 48,
+    "introduced_duplicates": 23,
+    "introduced_duplicate_pct": 32.39,
+    "detected_period": 3,
+    "period_confidence": 1.0,
+    "pattern_description": "1 duplicate roughly every 3 frames (confidence: 100%)",
+    "input_fps_rational": "24000/1001",
+    "output_fps_rational": "24000/1001",
+    "input_is_vfr": false,
+    "output_is_vfr": false
+  },
+  "clean_report": {
+    "verdict": "PASS",
+    "stutter_detected": false,
+    "total_frames_analyzed": 72,
+    "analyzed_transitions": 71,
+    "native_static_frames": 0,
+    "normal_motion_frames": 71,
+    "introduced_duplicates": 0,
+    "introduced_duplicate_pct": 0.0,
+    "detected_period": null,
+    "period_confidence": 0.0,
+    "pattern_description": "None",
+    "input_fps_rational": "24000/1001",
+    "output_fps_rational": "24000/1001",
+    "input_is_vfr": false,
+    "output_is_vfr": false
+  }
+}
