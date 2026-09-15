@@ -1745,7 +1745,7 @@
           </select>
           <p data-i18n="cadence.hint">Interpolates motion at the same frame rate, preserving both eyes and audio. Test a short clip first: motion artifacts are possible.</p>
         </div>
-        <label id="cadence-option"><input type="checkbox" id="check-cadence" checked>
+        <label id="cadence-option"><input type="checkbox" id="check-cadence">
           <span data-i18n="cadence.check">Check motion continuity after conversion (SBS)</span></label>
         <!-- Trimming for quick preview -->
         <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-subtle);">
@@ -1802,7 +1802,7 @@
 
         <!-- Preset Tiles -->
         <div class="preset-group" role="radiogroup" aria-label="3D Depth Presets">
-          <div class="preset-btn active" data-preset="balanced" role="radio" aria-checked="true" tabindex="0">
+          <div class="preset-btn" data-preset="balanced" role="radio" aria-checked="false" tabindex="0">
             <div class="preset-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="4" y1="21" x2="4" y2="14" />
@@ -1817,7 +1817,7 @@
               </svg>
             </div>
             <div class="name" data-i18n="presets.balanced_name">Balanced</div>
-            <div class="desc" data-i18n="presets.balanced_desc">All-round baseline (0.025)</div>
+            <div class="desc" data-i18n="presets.balanced_desc">All-round baseline (5.0)</div>
           </div>
 
           <div class="preset-btn" data-preset="cinematic_depth" role="radio" aria-checked="false" tabindex="0">
@@ -1828,7 +1828,7 @@
               </svg>
             </div>
             <div class="name" data-i18n="presets.cinematic_name">Cinematic Depth</div>
-            <div class="desc" data-i18n="presets.cinematic_desc">Enhanced depth (0.030)</div>
+            <div class="desc" data-i18n="presets.cinematic_desc">Enhanced depth (6.0)</div>
           </div>
 
           <div class="preset-btn" data-preset="subtle_parallax" role="radio" aria-checked="false" tabindex="0">
@@ -1842,7 +1842,7 @@
               </svg>
             </div>
             <div class="name" data-i18n="presets.subtle_name">Subtle Parallax</div>
-            <div class="desc" data-i18n="presets.subtle_desc">Comfortable viewing (0.020)</div>
+            <div class="desc" data-i18n="presets.subtle_desc">Comfortable viewing (4.0)</div>
           </div>
 
           <div class="preset-btn" data-preset="high_contrast" role="radio" aria-checked="false" tabindex="0">
@@ -1853,7 +1853,7 @@
               </svg>
             </div>
             <div class="name" data-i18n="presets.contrast_name">High Contrast</div>
-            <div class="desc" data-i18n="presets.contrast_desc">Anime & outlines (0.022)</div>
+            <div class="desc" data-i18n="presets.contrast_desc">Anime & outlines (4.5)</div>
           </div>
         </div>
 
@@ -1964,6 +1964,7 @@
                 <option value="0.0" data-i18n="controls.smoothing_off">Off</option>
                 <option value="0.35" data-i18n="controls.smoothing_low">Low</option>
                 <option value="0.65" selected data-i18n="controls.smoothing_medium">Medium</option>
+                <option value="0.70" data-i18n="controls.smoothing_object">Object Stable</option>
                 <option value="0.85" data-i18n="controls.smoothing_high">High</option>
               </select>
             </div>
@@ -2000,7 +2001,7 @@
         <div class="options-row">
           <div>
             <label class="checkbox-label">
-              <input type="checkbox" id="chk-save-depth" checked>
+              <input type="checkbox" id="chk-save-depth">
               <span data-i18n="options.save_depth_label">Save Depth Map (_depth.mp4 / _depth.png)</span>
             </label>
             <p class="checkbox-desc" data-i18n="options.save_depth_desc">Saves grayscale depth map for manual editing in Photoshop or DaVinci Resolve.</p>
@@ -2008,7 +2009,7 @@
 
           <div>
             <label class="checkbox-label">
-              <input type="checkbox" id="chk-crop" checked>
+              <input type="checkbox" id="chk-crop">
               <span data-i18n="options.crop_label">Automatic Black Bar Detection (Letterbox crop)</span>
             </label>
             <p class="checkbox-desc" data-i18n="options.crop_desc">Prevents black borders from distorting foreground depth or creating harsh edge seams.</p>
@@ -2328,13 +2329,13 @@
     const statEta = document.getElementById('stat-eta');
     const logTerminal = document.getElementById('log-terminal');
 
-    let currentProfile = "balanced";
+    let currentProfile = null;
 
     const PROFILES = {
       "balanced": { strength: 5.0, convergence: 0.50, temporal: "0.65", style: "natural", profile: "balanced" },
       "cinematic_depth": { strength: 6.0, convergence: 0.45, temporal: "0.75", style: "cinematic", profile: "balanced" },
       "subtle_parallax": { strength: 4.0, convergence: 0.50, temporal: "0.35", style: "natural", profile: "fast" },
-      "high_contrast": { strength: 4.5, convergence: 0.50, temporal: "0.65", style: "natural", profile: "balanced" }
+      "high_contrast": { strength: 4.5, convergence: 0.50, temporal: "0.70", style: "natural", profile: "balanced" }
     };
 
     // ==========================================
@@ -2355,7 +2356,8 @@
     });
 
     btnResetStrength.addEventListener('click', () => {
-      const p = PROFILES[currentProfile] || PROFILES["balanced"];
+      if (!currentProfile) return;
+      const p = PROFILES[currentProfile];
       sliderStrength.value = p.strength;
       valStrength.textContent = p.strength.toFixed(1);
       updateSliderFill(sliderStrength);

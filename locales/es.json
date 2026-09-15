@@ -38,13 +38,13 @@
   "presets": {
     "title": "Presets de Conversión",
     "balanced_name": "Balanceado",
-    "balanced_desc": "Uso general (0.025)",
+    "balanced_desc": "Uso general (5.0)",
     "cinematic_name": "Profundidad Cinemática",
-    "cinematic_desc": "Mayor relieve (0.030)",
+    "cinematic_desc": "Mayor relieve (6.0)",
     "subtle_name": "Paralaje Sutil",
-    "subtle_desc": "Visualización cómoda (0.020)",
+    "subtle_desc": "Visualización cómoda (4.0)",
     "contrast_name": "Alto Contraste",
-    "contrast_desc": "Anime y contornos (0.022)"
+    "contrast_desc": "Anime y contornos (4.5)"
   },
   "controls": {
     "format_label": "Formato de Salida 3D",
@@ -77,6 +77,7 @@
     "smoothing_off": "Desactivado (Off)",
     "smoothing_low": "Bajo (Low)",
     "smoothing_medium": "Medio (Medium)",
+    "smoothing_object": "Objetos estables",
     "smoothing_high": "Alto (High)",
     "crop_label_select": "Detección de Barras Negras",
     "crop_auto": "Detección Automática (Recomendado)",
