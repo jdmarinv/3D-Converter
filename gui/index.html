@@ -856,6 +856,62 @@
       border: 2px solid var(--accent-primary);
     }
 
+    .btn-reset-text {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0 4px;
+      transition: color var(--trans-fast);
+      font-family: inherit;
+    }
+
+    .btn-reset-text:hover {
+      color: var(--accent-cyan-light);
+    }
+
+    .slider-scale-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0 2px;
+    }
+
+    .adv-details {
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      background: rgba(9, 14, 26, 0.45);
+      margin-top: 14px;
+      margin-bottom: 14px;
+      transition: border-color var(--trans-fast);
+    }
+
+    .adv-details[open] {
+      border-color: rgba(99, 102, 241, 0.35);
+    }
+
+    .adv-summary {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      outline: none;
+    }
+
+    .adv-summary:hover {
+      color: var(--accent-primary-light);
+    }
+
     /* Options Section & Custom Checkboxes */
     .options-row {
       display: flex;
@@ -1572,7 +1628,7 @@
           </div>
         </div>
 
-        <!-- Format & Render Mode Dropdowns -->
+        <!-- Format & Eye Rendering Dropdowns -->
         <div class="controls-grid">
           <div>
             <div class="control-label">
@@ -1590,19 +1646,49 @@
 
           <div>
             <div class="control-label">
-              <span data-i18n="controls.render_mode_label">Rendering Mode</span>
+              <span data-i18n="controls.eye_label">Eye Rendering</span>
               <span class="badge-tag" data-i18n="controls.render_mode_rec">RECOMMENDED</span>
             </div>
             <div class="select-wrapper">
               <select id="render-mode-select" class="select-custom">
-                <option value="both" selected data-i18n="controls.render_mode_both">Symmetric (balanced deformation)</option>
-                <option value="right_only" data-i18n="controls.render_mode_right">One-sided (left eye pristine)</option>
+                <option value="right_only" selected data-i18n="controls.eye_right">Right eye (Left eye pristine)</option>
+                <option value="left_only" data-i18n="controls.eye_left">Left eye (Right eye pristine)</option>
+                <option value="both" data-i18n="controls.eye_dual">Dual eye (Symmetric / 2x depth)</option>
               </select>
             </div>
           </div>
         </div>
 
-        <!-- Sliders with Dynamic Track Gradient Fill -->
+        <!-- Inference Profile & Speed Acceleration -->
+        <div class="controls-grid">
+          <div>
+            <div class="control-label">
+              <span data-i18n="controls.depth_model_label">Inference Profile (Speed / Quality)</span>
+            </div>
+            <div class="select-wrapper">
+              <select id="depth-profile-select" class="select-custom">
+                <option value="fast" data-i18n="controls.depth_model_fast">Fast (ViT-Fast / 392p - 4x speed on 4K)</option>
+                <option value="balanced" selected data-i18n="controls.depth_model_balanced">Balanced (ViT-Standard / 518p)</option>
+                <option value="high_fidelity" data-i18n="controls.depth_model_high_fidelity">High Fidelity (ViT-Large / Maximum detail)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <div class="control-label">
+              <span data-i18n="controls.depth_stride_label">Speed Acceleration (Depth Stride)</span>
+            </div>
+            <div class="select-wrapper">
+              <select id="depth-stride-select" class="select-custom">
+                <option value="1" selected data-i18n="controls.depth_stride_1">1x (Normal - Every frame)</option>
+                <option value="2" data-i18n="controls.depth_stride_2">2x (Fast - Alternate frames / 2x speed)</option>
+                <option value="3" data-i18n="controls.depth_stride_3">3x (Ultra Fast - Every 3 frames)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3D Strength (1.0 to 10.0, step 0.5) -->
         <div class="slider-item">
           <div class="slider-header">
             <span>
@@ -1611,39 +1697,75 @@
                 <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
                 <line x1="12" y1="22.08" x2="12" y2="12" />
               </svg>
-              <span data-i18n="controls.slider_divergence">3D Depth Intensity (Parallax)</span>
+              <span data-i18n="controls.strength_label">3D Strength</span>
             </span>
-            <span class="val" id="val-divergence">0.025</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" id="btn-reset-strength" class="btn-reset-text" data-i18n="controls.strength_reset">Reset to preset</button>
+              <span class="val" id="val-strength">5.0</span>
+            </div>
           </div>
-          <input type="range" id="slider-divergence" min="0.010" max="0.060" step="0.002" value="0.025" aria-label="3D Depth Intensity">
+          <input type="range" id="slider-strength" min="1.0" max="10.0" step="0.5" value="5.0" aria-label="3D Strength">
+          <div class="slider-scale-ticks">
+            <span>1.0 (Subtle)</span>
+            <span>5.0 (Standard)</span>
+            <span>10.0 (Pop-out)</span>
+          </div>
         </div>
 
-        <div class="slider-item">
-          <div class="slider-header">
-            <span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-              </svg>
-              <span data-i18n="controls.slider_convergence">Convergence Plane (Zero-Parallax)</span>
-            </span>
-            <span class="val" id="val-convergence">0.50</span>
+        <!-- 3D Style & Smoothing Dropdowns -->
+        <div class="controls-grid" style="margin-top: 14px; margin-bottom: 12px;">
+          <div>
+            <div class="control-label">
+              <span data-i18n="controls.style_label">3D Style</span>
+            </div>
+            <div class="select-wrapper">
+              <select id="style-3d-select" class="select-custom">
+                <option value="natural" selected data-i18n="controls.style_realistic">Natural</option>
+                <option value="cinematic" data-i18n="controls.style_cinematic">Cinematic</option>
+              </select>
+            </div>
           </div>
-          <input type="range" id="slider-convergence" min="0.10" max="0.90" step="0.05" value="0.50" aria-label="Convergence Plane">
+
+          <div>
+            <div class="control-label">
+              <span data-i18n="controls.depth_smoothing_label">Depth Smoothing (Anti-flicker)</span>
+            </div>
+            <div class="select-wrapper">
+              <select id="smoothing-select" class="select-custom">
+                <option value="0.0" data-i18n="controls.smoothing_off">Off</option>
+                <option value="0.35" data-i18n="controls.smoothing_low">Low</option>
+                <option value="0.65" selected data-i18n="controls.smoothing_medium">Medium</option>
+                <option value="0.85" data-i18n="controls.smoothing_high">High</option>
+              </select>
+            </div>
+          </div>
         </div>
 
-        <div class="slider-item">
-          <div class="slider-header">
-            <span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 12h20M2 12a10 10 0 0 1 18-6M2 12a10 10 0 0 0 18 6" />
-              </svg>
-              <span data-i18n="controls.slider_temporal">Temporal Smoothing (Anti-Flicker)</span>
-            </span>
-            <span class="val" id="val-temporal">0.65</span>
+        <!-- Advanced Collapsible Settings -->
+        <details class="adv-details">
+          <summary class="adv-summary">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            <span data-i18n="controls.adv_settings">Advanced Export Settings</span>
+          </summary>
+          <div style="padding-top: 14px;">
+            <div class="slider-item" style="margin-bottom: 0;">
+              <div class="slider-header">
+                <span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                  </svg>
+                  <span data-i18n="controls.slider_convergence">Convergence Plane (Zero-Parallax)</span>
+                </span>
+                <span class="val" id="val-convergence">0.50</span>
+              </div>
+              <input type="range" id="slider-convergence" min="0.10" max="0.90" step="0.05" value="0.50" aria-label="Convergence Plane">
+            </div>
           </div>
-          <input type="range" id="slider-temporal" min="0.0" max="0.95" step="0.05" value="0.65" aria-label="Temporal Smoothing">
-        </div>
+        </details>
 
         <!-- Depth Map & Crop Options -->
         <div class="options-row">
@@ -1902,13 +2024,16 @@
     const presetButtons = document.querySelectorAll('.preset-btn');
     const formatSelect = document.getElementById('format-select');
     const renderModeSelect = document.getElementById('render-mode-select');
+    const depthProfileSelect = document.getElementById('depth-profile-select');
+    const depthStrideSelect = document.getElementById('depth-stride-select');
+    const styleSelect = document.getElementById('style-3d-select');
+    const smoothingSelect = document.getElementById('smoothing-select');
 
-    const sliderDivergence = document.getElementById('slider-divergence');
-    const valDivergence = document.getElementById('val-divergence');
+    const sliderStrength = document.getElementById('slider-strength');
+    const valStrength = document.getElementById('val-strength');
+    const btnResetStrength = document.getElementById('btn-reset-strength');
     const sliderConvergence = document.getElementById('slider-convergence');
     const valConvergence = document.getElementById('val-convergence');
-    const sliderTemporal = document.getElementById('slider-temporal');
-    const valTemporal = document.getElementById('val-temporal');
 
     const chkSaveDepth = document.getElementById('chk-save-depth');
     const chkCrop = document.getElementById('chk-crop');
@@ -1937,16 +2062,17 @@
     let currentProfile = "balanced";
 
     const PROFILES = {
-      "balanced": { divergence: 0.025, convergence: 0.50, temporal: 0.65 },
-      "cinematic_depth": { divergence: 0.030, convergence: 0.45, temporal: 0.75 },
-      "subtle_parallax": { divergence: 0.020, convergence: 0.50, temporal: 0.50 },
-      "high_contrast": { divergence: 0.022, convergence: 0.50, temporal: 0.70 }
+      "balanced": { strength: 5.0, convergence: 0.50, temporal: "0.65", style: "natural", profile: "balanced" },
+      "cinematic_depth": { strength: 6.0, convergence: 0.45, temporal: "0.75", style: "cinematic", profile: "balanced" },
+      "subtle_parallax": { strength: 4.0, convergence: 0.50, temporal: "0.35", style: "natural", profile: "fast" },
+      "high_contrast": { strength: 4.5, convergence: 0.50, temporal: "0.65", style: "natural", profile: "balanced" }
     };
 
     // ==========================================
     // Dynamic Slider Fill Gradient (Pro UX)
     // ==========================================
     function updateSliderFill(slider) {
+      if (!slider) return;
       const min = parseFloat(slider.min);
       const max = parseFloat(slider.max);
       const val = parseFloat(slider.value);
@@ -1954,17 +2080,21 @@
       slider.style.background = `linear-gradient(to right, #6366f1 0%, #06b6d4 ${pct}%, rgba(255, 255, 255, 0.08) ${pct}%, rgba(255, 255, 255, 0.08) 100%)`;
     }
 
-    sliderDivergence.addEventListener('input', (e) => {
-      valDivergence.textContent = parseFloat(e.target.value).toFixed(3);
-      updateSliderFill(sliderDivergence);
+    sliderStrength.addEventListener('input', (e) => {
+      valStrength.textContent = parseFloat(e.target.value).toFixed(1);
+      updateSliderFill(sliderStrength);
     });
+
+    btnResetStrength.addEventListener('click', () => {
+      const p = PROFILES[currentProfile] || PROFILES["balanced"];
+      sliderStrength.value = p.strength;
+      valStrength.textContent = p.strength.toFixed(1);
+      updateSliderFill(sliderStrength);
+    });
+
     sliderConvergence.addEventListener('input', (e) => {
       valConvergence.textContent = parseFloat(e.target.value).toFixed(2);
       updateSliderFill(sliderConvergence);
-    });
-    sliderTemporal.addEventListener('input', (e) => {
-      valTemporal.textContent = parseFloat(e.target.value).toFixed(2);
-      updateSliderFill(sliderTemporal);
     });
 
     // Preset Selection
@@ -1979,23 +2109,22 @@
         currentProfile = btn.dataset.preset;
         if (PROFILES[currentProfile]) {
           const p = PROFILES[currentProfile];
-          sliderDivergence.value = p.divergence;
-          valDivergence.textContent = p.divergence.toFixed(3);
+          sliderStrength.value = p.strength;
+          valStrength.textContent = p.strength.toFixed(1);
           sliderConvergence.value = p.convergence;
           valConvergence.textContent = p.convergence.toFixed(2);
-          sliderTemporal.value = p.temporal;
-          valTemporal.textContent = p.temporal.toFixed(2);
-          updateSliderFill(sliderDivergence);
+          if (p.style && styleSelect) styleSelect.value = p.style;
+          if (p.temporal && smoothingSelect) smoothingSelect.value = p.temporal;
+          if (p.profile && depthProfileSelect) depthProfileSelect.value = p.profile;
+          updateSliderFill(sliderStrength);
           updateSliderFill(sliderConvergence);
-          updateSliderFill(sliderTemporal);
         }
       });
     });
 
     // Initial slider fills
-    updateSliderFill(sliderDivergence);
+    updateSliderFill(sliderStrength);
     updateSliderFill(sliderConvergence);
-    updateSliderFill(sliderTemporal);
 
     // Custom depth checkbox toggle
     chkCustomDepth.addEventListener('change', (e) => {
@@ -2131,6 +2260,7 @@
         return;
       }
 
+      const strengthVal = parseFloat(sliderStrength.value);
       const payload = {
         operation: document.getElementById("operation").value,
         repair_layout: document.getElementById("repair-layout").value,
@@ -2139,9 +2269,13 @@
         format: formatSelect.value,
         profile: currentProfile,
         render_mode: renderModeSelect.value,
-        depth_intensity: parseFloat(sliderDivergence.value),
+        strength_3d: strengthVal,
+        depth_intensity: strengthVal * 0.005,
+        style_3d: styleSelect.value,
+        depth_profile: depthProfileSelect.value,
+        depth_stride: parseInt(depthStrideSelect.value, 10) || 1,
         convergence: parseFloat(sliderConvergence.value),
-        temporal_smooth: parseFloat(sliderTemporal.value),
+        temporal_smooth: parseFloat(smoothingSelect.value),
         auto_crop: chkCrop.checked,
         save_depth: chkSaveDepth.checked,
         custom_depth: chkCustomDepth.checked ? customDepthPath.value.trim() : null,

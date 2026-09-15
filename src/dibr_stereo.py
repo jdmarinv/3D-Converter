@@ -13,20 +13,24 @@ class StereoSynthesizer:
         convergence: float = 0.5,
         pop_out: float = 0.0,
         render_mode: str = "right_only",
-        edge_refine: bool = True
+        edge_refine: bool = True,
+        style_3d: str = "natural"
     ):
         """
-        :param divergence: Max horizontal parallax separation (relative to image width, 0.015 - 0.05)
+        :param divergence: Max horizontal parallax separation (relative to image width, 0.005 - 0.06)
         :param convergence: Zero-parallax plane (0.0=all pop-out, 1.0=all deep in screen, 0.5=balanced)
         :param pop_out: Additional offset to emphasize foreground objects popping out
-        :param render_mode: 'right_only' (Pristine reference standard: Left eye is 100% pristine original, Right eye is shifted)
-                            or 'both' (symmetric shift)
+        :param render_mode: 'right_only' (Left eye pristine, Right eye shifted),
+                            'left_only' (Right eye pristine, Left eye shifted),
+                            or 'both' (symmetric dual-eye shift)
         :param edge_refine: Apply joint bilateral edge snapping to align depth edges to RGB contours
+        :param style_3d: 'natural' (linear depth response) or 'cinematic' (contrast-enhanced depth)
         """
         self.divergence = divergence
         self.convergence = np.clip(convergence - pop_out * 0.2, 0.05, 0.95)
         self.render_mode = render_mode
         self.edge_refine = edge_refine
+        self.style_3d = style_3d
 
     def _refine_depth_edges(self, rgb: np.ndarray, depth: np.ndarray) -> np.ndarray:
         """
@@ -109,13 +113,20 @@ class StereoSynthesizer:
           - Left eye is the 100% UNTOUCHED original RGB (zero warping, razor sharp lines/text).
           - Right eye is shifted by -1.0x disparity.
         """
+        if self.style_3d == "cinematic":
+            # Contrast-enhanced depth curve for cinematic depth separation
+            depth = np.clip(np.power(depth, 1.25), 0.0, 1.0)
+
         if self.edge_refine:
             depth = self._refine_depth_edges(rgb, depth)
 
         if self.render_mode == "right_only":
             left_eye = rgb.copy() # 100% original pristine frame
             right_eye = self._render_shifted_eye(rgb, depth, shift_multiplier=-1.0)
-        else: # both
+        elif self.render_mode == "left_only":
+            left_eye = self._render_shifted_eye(rgb, depth, shift_multiplier=1.0)
+            right_eye = rgb.copy() # 100% original pristine frame
+        else: # both / dual eye
             left_eye = self._render_shifted_eye(rgb, depth, shift_multiplier=0.5)
             right_eye = self._render_shifted_eye(rgb, depth, shift_multiplier=-0.5)
 

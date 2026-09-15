@@ -77,18 +77,28 @@ class DepthEngine:
         self,
         model_path: Optional[Union[str, Path]] = None,
         device: Optional[torch.device] = None,
-        patch_size: int = DEFAULT_PATCH_SIZE
+        patch_size: Optional[int] = None,
+        depth_profile: str = "balanced"
     ):
         self.device = device or DEVICE
         self.model_path = Path(model_path or DEFAULT_DEPTH_MODEL)
-        self.patch_size = patch_size
+        self.depth_profile = depth_profile
+
+        # Configure patch size based on depth_profile if patch_size not explicitly given
+        if patch_size is not None:
+            self.patch_size = patch_size
+        elif depth_profile == "fast":
+            self.patch_size = 392
+        else:
+            self.patch_size = DEFAULT_PATCH_SIZE
+
         self.temporal_filter = TemporalDepthFilter()
 
         # ImageNet normalization constants
         self.mean = torch.tensor([0.485, 0.456, 0.406], device=self.device).view(1, 3, 1, 1)
         self.std = torch.tensor([0.229, 0.224, 0.225], device=self.device).view(1, 3, 1, 1)
 
-        print(f"[DepthEngine] Loading model weights from {self.model_path} on {self.device}...")
+        print(f"[DepthEngine] Loading model weights from {self.model_path} on {self.device} (Profile: {self.depth_profile}, Patch: {self.patch_size})...")
         self.model = load_depth_model(self.model_path, self.device)
         print("[DepthEngine] Model ready for high-fidelity offline inference.")
 

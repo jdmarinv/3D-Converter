@@ -434,10 +434,29 @@ def main():
         help="Preset profile (standard stereoscopic profiles: balanced, cinematic_depth, subtle_parallax, high_contrast)"
     )
     parser.add_argument(
+        "--3d-strength", "--strength-3d",
+        type=float,
+        dest="strength_3d",
+        default=None,
+        help="3D depth strength scale from 1.0 to 10.0 (step 0.5, default: 5.0). Maps to stereo divergence."
+    )
+    parser.add_argument(
+        "--style-3d",
+        choices=["natural", "cinematic"],
+        default="natural",
+        help="3D depth style: natural (linear depth) or cinematic (accentuated foreground/background separation)"
+    )
+    parser.add_argument(
+        "--depth-profile",
+        choices=["fast", "balanced", "high_fidelity"],
+        default="balanced",
+        help="Inference depth profile: fast (392p, up to 4x faster on 4K), balanced (518p default), high_fidelity (highest detail)"
+    )
+    parser.add_argument(
         "--render-mode",
-        choices=["right_only", "both"],
+        choices=["right_only", "left_only", "both"],
         default="right_only",
-        help="Stereo render mode: right_only (Default: Left eye untouched, eliminates ghosting) or both"
+        help="Stereo render mode: right_only (Left eye untouched), left_only (Right eye untouched), or both (symmetric 2x depth)"
     )
     parser.add_argument(
         "--save-depth",
@@ -563,6 +582,10 @@ def main():
         args.pop_out = prof["pop_out"]
         args.temporal_smooth = prof["temporal_smooth"]
 
+    # 3D Strength scale 1.0 - 10.0 overrides raw depth_intensity if provided
+    if args.strength_3d is not None:
+        args.depth_intensity = round(args.strength_3d * 0.005, 4)
+
     ext = input_path.suffix.lower()
     is_video = ext in VIDEO_EXTS
     is_image = ext in IMAGE_EXTS
@@ -633,7 +656,7 @@ def main():
     # Initialize depth engine only if not using custom depth map
     depth_engine = None
     if not custom_depth_path:
-        depth_engine = DepthEngine()
+        depth_engine = DepthEngine(depth_profile=args.depth_profile)
         depth_engine.temporal_filter.alpha = args.temporal_smooth
 
     synthesizer = StereoSynthesizer(
@@ -641,7 +664,8 @@ def main():
         convergence=args.convergence,
         pop_out=args.pop_out,
         render_mode=args.render_mode,
-        edge_refine=True
+        edge_refine=True,
+        style_3d=args.style_3d
     )
 
     if is_image:

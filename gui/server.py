@@ -72,10 +72,14 @@ class ConversionRequest(BaseModel):
     format: str = "hsbs"
     profile: Optional[str] = "balanced"
     render_mode: str = "both"
-    depth_intensity: float = 0.022
+    depth_intensity: float = 0.025
+    strength_3d: Optional[float] = None
+    style_3d: Optional[str] = "natural"
+    depth_profile: Optional[str] = "balanced"
+    depth_stride: int = 1
     convergence: float = 0.50
     pop_out: float = 0.0
-    temporal_smooth: float = 0.70
+    temporal_smooth: float = 0.65
     auto_crop: bool = True
     save_depth: bool = False
     custom_depth: Optional[str] = None
@@ -259,11 +263,19 @@ def build_conversion_command(req):
         return [sys.executable, "-u", "-m", "src.cadence_repair", "-i", str(source),
                 "-o", str(output), "--layout", req.repair_layout,
                 "--start-time", str(req.start_time), "--duration", str(req.duration)]
+    intensity = req.depth_intensity
+    if req.strength_3d is not None:
+        intensity = round(req.strength_3d * 0.005, 4)
+
     cmd = [sys.executable, "-u", str(PROJECT_ROOT / "convert_3d.py"),
            "-i", str(source), "-o", str(output), "-f", req.format,
-           "--render-mode", req.render_mode, "--depth-intensity", str(req.depth_intensity),
+           "--render-mode", req.render_mode, "--depth-intensity", str(intensity),
            "--convergence", str(req.convergence), "--pop-out", str(req.pop_out),
            "--temporal-smooth", str(req.temporal_smooth)]
+    if req.strength_3d is not None: cmd += ["--3d-strength", str(req.strength_3d)]
+    if req.style_3d: cmd += ["--style-3d", req.style_3d]
+    if req.depth_profile: cmd += ["--depth-profile", req.depth_profile]
+    if req.depth_stride and req.depth_stride > 1: cmd += ["--depth-stride", str(req.depth_stride)]
     if req.profile: cmd += ["--profile", req.profile]
     if req.save_depth: cmd += ["--save-depth"]
     if req.custom_depth: cmd += ["--custom-depth", str(Path(req.custom_depth).resolve())]
