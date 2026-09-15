@@ -345,8 +345,7 @@ async def start_conversion(req: ConversionRequest):
         elif is_video:
             try:
                 info = get_media_info(source)
-                if info["is_vfr"]: error = "VFR detected: normalize a separate copy to CFR before processing."
-                elif req.start_time >= info["duration"]: error = "Start time is outside the video."
+                if req.start_time >= info["duration"]: error = "Start time is outside the video."
             except Exception as exc: error = str(exc)
         if error: return JSONResponse(status_code=400, content={"error": error})
         conversion_state.update(status="running", percent=0.0, current_frame=0, total_frames=0,

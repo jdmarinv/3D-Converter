@@ -113,7 +113,7 @@ def analyze_visual_cadence(
     if max_frames:
         total_frames = min(total_frames, max_frames)
 
-    gen_in = read_video_frames(input_path, max_frames=total_frames, start_time=start_time, crop_filter=crop_filter)
+    gen_in = read_video_frames(input_path, max_frames=total_frames, start_time=start_time, crop_filter=crop_filter, force_cfr=info_in.get("is_vfr", False))
     gen_out = read_video_frames(output_path, max_frames=total_frames)
 
     prev_in = None

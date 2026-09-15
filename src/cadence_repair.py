@@ -21,8 +21,6 @@ def repair_defective_cadence(input_path, output_path, mode="interpolate",
     if layout not in ("2d", "sbs", "hsbs"):
         raise ValueError("Select 2D, Full SBS or Half SBS input.")
     info = get_media_info(source)
-    if info['is_vfr']:
-        raise ValueError("VFR repair is not supported; normalize a separate copy to CFR first.")
     fps = target_fps_rational or info['fps_rational']
     if Fraction(fps) != Fraction(info['fps_rational']):
         raise ValueError("Repair preserves the source frame rate.")
@@ -34,7 +32,7 @@ def repair_defective_cadence(input_path, output_path, mode="interpolate",
         raise ValueError("SBS requires even eye dimensions for H.264.")
     # Shared decimation BEFORE splitting prevents different frame selections in each eye.
     # Preserve PTS: resetting to N/fps after decimation would shorten the video.
-    base = '[0:v]setpts=PTS-STARTPTS,mpdecimate=max=1'
+    base = f'[0:v]fps=fps={fps}:round=near,setpts=PTS-STARTPTS,mpdecimate=max=1' if info['is_vfr'] else '[0:v]setpts=PTS-STARTPTS,mpdecimate=max=1'
     interp = f'minterpolate=fps={fps}:mi_mode=mci:mc_mode=aobmc:me_mode=bilat:me=epzs:vsbmc=1:scd_threshold=10'
     if layout == '2d':
         filters = f'{base},{interp}[motion]'

@@ -119,7 +119,7 @@ def get_media_info(file_path: Path) -> Dict[str, Any]:
     fps_rational = f"{fps_num}/{fps_den}" if fps_den != 1 else f"{fps_num}"
         
     duration = float(stream.get("duration") or format_data.get("duration") or 0.0)
-    nb_frames = int(stream.get("nb_frames") or round(duration * fps))
+    nb_frames = int(round(duration * fps)) if (is_vfr and duration > 0) else int(stream.get("nb_frames") or round(duration * fps))
 
     return {
         "width": width,
@@ -205,8 +205,9 @@ def read_video_frames(
         parts = crop_filter.replace("crop=", "").split(":")
         w, h = int(parts[0]), int(parts[1])
 
-    # If force_cfr is requested (e.g. VFR input source), add fps filter
-    if force_cfr or (info.get("is_vfr") and force_cfr):
+    # If force_cfr is requested or input is VFR, add fps filter to ensure strict CFR timing
+    use_cfr = force_cfr or bool(info.get("is_vfr", False))
+    if use_cfr:
         vf_filters.append(f"fps=fps={fps_rational}:round=near")
 
     # If start_frame is specified, calculate seek and trim if beneficial
@@ -239,7 +240,7 @@ def read_video_frames(
     vf_arg = ["-vf", ",".join(vf_filters)] if vf_filters else []
     cmd.extend([
         *vf_arg,
-        "-fps_mode", "passthrough",
+        "-fps_mode", "cfr" if use_cfr else "passthrough",
         "-f", "image2pipe",
         "-pix_fmt", "rgb24",
         "-vcodec", "rawvideo",

@@ -120,8 +120,6 @@ def process_video(
 ):
     print(f"[Video Mode] Inspecting media: {input_path.name}")
     info = get_media_info(input_path)
-    if info["is_vfr"]:
-        raise ValueError("VFR source: normalize a separate copy to CFR before conversion; variable timestamps are not preserved by this pipeline.")
     total_frames = info["nb_frames"]
     fps = info["fps"]
     fps_rational = info["fps_rational"]
@@ -130,8 +128,9 @@ def process_video(
     if duration > 0:
         total_frames = int(min(total_frames, round(duration * fps)))
 
+    vfr_status = "Yes (Auto-CFR sync active)" if info.get("is_vfr") else "No"
     print(f"  • Resolution: {info['width']}x{info['height']}")
-    print(f"  • Frame Rate: {fps_rational} ({fps:.2f} fps, VFR: {'Yes' if info['is_vfr'] else 'No'})")
+    print(f"  • Frame Rate: {fps_rational} ({fps:.2f} fps, VFR: {vfr_status})")
     print(f"  • Total Frames to process: ~{total_frames}")
     if start_time > 0 or duration > 0:
         print(f"  • Time range: Start={start_time}s, Duration={'Full' if duration <= 0 else f'{duration}s'}")
@@ -197,7 +196,8 @@ def process_video(
             custom_depth_path, crop_filter=crop_filter,
             start_time=start_time if start_time > 0 else None,
             duration=duration if duration > 0 else None,
-            start_frame=start_frame if start_frame > 0 else None
+            start_frame=start_frame if start_frame > 0 else None,
+            force_cfr=info.get("is_vfr", False)
         )
 
     # Main video writer
@@ -236,7 +236,8 @@ def process_video(
         input_path, crop_filter=crop_filter,
         start_time=start_time if start_time > 0 else None,
         duration=duration if duration > 0 else None,
-        start_frame=start_frame if start_frame > 0 else None
+        start_frame=start_frame if start_frame > 0 else None,
+        force_cfr=info.get("is_vfr", False)
     )
 
     frames_written = start_frame

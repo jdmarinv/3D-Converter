@@ -2101,7 +2101,12 @@
           framePreviewImage.src = `/api/frame-preview?frame=0&t=${Date.now()}`;
           mediaInfoBox.style.display = 'grid';
           infoRes.textContent = `${data.width}x${data.height}`;
-          infoFps.textContent = data.fps > 0 ? `${data.fps} fps` : 'Static';
+          infoFps.textContent = data.fps > 0 ? (data.is_vfr ? `${data.fps} fps (VFR)` : `${data.fps} fps`) : 'Static';
+          if (data.is_vfr) {
+            infoFps.title = 'Variable Frame Rate: Auto-CFR synchronization active';
+          } else {
+            infoFps.removeAttribute('title');
+          }
           infoDur.textContent = data.duration > 0 ? `${Math.floor(data.duration / 60)}m ${Math.floor(data.duration % 60)}s` : '1 frame';
           infoAudio.textContent = data.audio ? 'Stereo' : 'No Audio';
         }
