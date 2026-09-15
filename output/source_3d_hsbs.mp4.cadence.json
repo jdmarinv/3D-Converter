@@ -1,0 +1,17 @@
+{
+  "verdict": "PASS",
+  "stutter_detected": false,
+  "total_frames_analyzed": 12,
+  "analyzed_transitions": 11,
+  "native_static_frames": 0,
+  "normal_motion_frames": 11,
+  "introduced_duplicates": 0,
+  "introduced_duplicate_pct": 0.0,
+  "detected_period": null,
+  "period_confidence": 0.0,
+  "pattern_description": "None",
+  "input_fps_rational": "24",
+  "output_fps_rational": "24",
+  "input_is_vfr": false,
+  "output_is_vfr": false
+}

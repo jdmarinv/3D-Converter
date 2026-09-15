@@ -486,6 +486,36 @@
       height: 22px;
     }
 
+    .frame-preview {
+      position: relative;
+      display: none;
+      overflow: hidden;
+      min-height: 210px;
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: var(--radius-md);
+      background: #030712;
+    }
+
+    .frame-preview img {
+      display: block;
+      width: 100%;
+      min-height: 210px;
+      max-height: 340px;
+      object-fit: contain;
+    }
+
+    .frame-preview-badge {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      color: #fff;
+      background: rgba(3, 7, 18, 0.82);
+      font: 600 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+      backdrop-filter: blur(8px);
+    }
+
     .file-input-row {
       display: flex;
       gap: 10px;
@@ -1408,6 +1438,11 @@
           <p style="font-size: 12px; color: var(--text-muted);" data-i18n="media.dropzone_sub">Supports MP4, MOV, MKV, PNG, JPG (Letterbox detected automatically)</p>
         </div>
 
+        <div class="frame-preview" id="frame-preview">
+          <img id="frame-preview-image" alt="Current source frame">
+          <div class="frame-preview-badge" id="frame-preview-badge">Frame 0</div>
+        </div>
+
         <div class="file-input-row">
           <input type="text" id="input-path" class="text-input" data-i18n-placeholder="media.input_placeholder" placeholder="File path (e.g. /path/to/video.mp4)" aria-label="Media File Path">
           <button id="btn-browse" class="btn btn-secondary" data-i18n="media.btn_browse">
@@ -1419,24 +1454,35 @@
         </div>
 
         <div class="file-input-row">
-          <label for="operation">Operación</label>
+          <label for="operation" data-i18n="cadence.operation">Operación</label>
           <select id="operation" class="text-input">
-            <option value="convert">Convertir 2D a 3D</option>
-            <option value="repair">Reparar tirones de un video existente</option>
+            <option value="convert" data-i18n="cadence.convert">Convertir 2D a 3D</option>
+            <option value="repair" data-i18n="cadence.repair">Reparar tirones de un video existente</option>
           </select>
         </div>
         <div id="repair-options" hidden>
-          <label for="repair-layout">Formato del video de entrada</label>
+          <label for="repair-layout" data-i18n="cadence.layout">Formato del video de entrada</label>
           <select id="repair-layout" class="text-input">
             <option value="hsbs">Half SBS</option>
             <option value="sbs">Full SBS</option>
             <option value="2d">2D</option>
           </select>
-          <p>Interpola movimiento a los mismos fps, conserva ambos ojos y el audio.
+          <p data-i18n="cadence.hint">Interpola movimiento a los mismos fps, conserva ambos ojos y el audio.
           Prueba un tramo corto primero: puede introducir deformaciones.</p>
         </div>
         <label id="cadence-option"><input type="checkbox" id="check-cadence" checked>
-          Comprobar continuidad del movimiento al terminar (SBS)</label>
+          <span data-i18n="cadence.check">Comprobar continuidad del movimiento al terminar (SBS)</span></label>
+        <!-- Trimming for quick preview -->
+        <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-subtle);">
+          <div class="control-label">
+            <span data-i18n="options.trim_title">Quick Preview Clip (Optional)</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <input type="number" id="input-start-time" class="text-input" data-i18n-placeholder="options.trim_start_placeholder" placeholder="Start second (e.g. 10)" min="0" aria-label="Start Time">
+            <input type="number" id="input-duration" class="text-input" data-i18n-placeholder="options.trim_duration_placeholder" placeholder="Duration secs (e.g. 10)" min="0" aria-label="Duration">
+          </div>
+        </div>
+        <p id="import-status" role="status" aria-live="polite" style="color:var(--text-muted);font-size:13px"></p>
         <!-- Probed Media Metadata Grid -->
         <div class="media-info-grid" id="media-info-box" style="display: none;">
           <div class="info-badge">
@@ -1549,8 +1595,8 @@
             </div>
             <div class="select-wrapper">
               <select id="render-mode-select" class="select-custom">
-                <option value="right_only" selected data-i18n="controls.render_mode_right">Standard (Right side only - Left eye pristine)</option>
-                <option value="both" data-i18n="controls.render_mode_both">Symmetric (Both eyes warped)</option>
+                <option value="both" selected data-i18n="controls.render_mode_both">Symmetric (balanced deformation)</option>
+                <option value="right_only" data-i18n="controls.render_mode_right">One-sided (left eye pristine)</option>
               </select>
             </div>
           </div>
@@ -1640,16 +1686,6 @@
           </div>
         </div>
 
-        <!-- Trimming for quick preview -->
-        <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-subtle);">
-          <div class="control-label">
-            <span data-i18n="options.trim_title">Quick Preview Clip (Optional)</span>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <input type="number" id="input-start-time" class="text-input" data-i18n-placeholder="options.trim_start_placeholder" placeholder="Start second (e.g. 10)" min="0" aria-label="Start Time">
-            <input type="number" id="input-duration" class="text-input" data-i18n-placeholder="options.trim_duration_placeholder" placeholder="Duration secs (e.g. 10)" min="0" aria-label="Duration">
-          </div>
-        </div>
       </section>
 
     </div>
@@ -1847,6 +1883,14 @@
   <script>
     // Elements & State
     const dropzone = document.getElementById('dropzone');
+    const framePreview = document.getElementById('frame-preview');
+    const framePreviewImage = document.getElementById('frame-preview-image');
+    const framePreviewBadge = document.getElementById('frame-preview-badge');
+    framePreviewImage.addEventListener('load', () => {
+      const frame = framePreviewImage.dataset.requestedFrame;
+      const total = framePreviewImage.dataset.totalFrames;
+      framePreviewBadge.textContent = total ? `Frame ${frame} / ${total}` : `Frame ${frame}`;
+    });
     const inputPath = document.getElementById('input-path');
     const btnBrowse = document.getElementById('btn-browse');
     const mediaInfoBox = document.getElementById('media-info-box');
@@ -1960,15 +2004,25 @@
 
     // File pickers using server native dialogs
     btnBrowse.addEventListener('click', async () => {
-      const res = await fetch('/api/pick-file', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'media' })
-      });
-      const data = await res.json();
-      if (data.path) {
-        inputPath.value = data.path;
-        probeFile(data.path);
+      if (selectingFile) return;
+      selectingFile = true;
+      btnBrowse.disabled = true;
+      try {
+        const res = await fetch('/api/pick-file', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'media' })
+        });
+        const data = await res.json();
+        if (data.path) {
+          inputPath.value = data.path;
+          await probeFile(data.path);
+          document.getElementById('import-status').textContent = 'Usando el archivo original, sin copiarlo.';
+        }
+      } catch (error) {
+        document.getElementById('import-status').textContent = 'No se pudo abrir el selector. Pega la ruta completa en el campo del archivo.';
+      } finally {
+        selectingFile = false;
+        btnBrowse.disabled = false;
       }
     });
 
@@ -1978,17 +2032,43 @@
       dropzone.classList.add('dragover');
     });
     dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-    dropzone.addEventListener('drop', (e) => {
-      e.preventDefault();
+    let selectingFile = false;
+    dropzone.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); btnBrowse.click(); }
+    });
+    dropzone.addEventListener('drop', async (event) => {
+      event.preventDefault();
       dropzone.classList.remove('dragover');
-      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        const f = e.dataTransfer.files[0];
-        if (f.path) {
-          inputPath.value = f.path;
-          probeFile(f.path);
-        }
+      if (selectingFile) return;
+      const transfer = event.dataTransfer;
+      if (!transfer) return;
+      const files = transfer.files;
+      const status = document.getElementById('import-status');
+      if (files.length > 1) { status.textContent = 'Arrastra un solo archivo a la vez.'; return; }
+      if (btnStart.disabled) { status.textContent = 'Espera a que termine el proceso actual.'; return; }
+      let path = files[0] && files[0].path;
+      if (!path) {
+        const text = (transfer.getData('text/uri-list') || transfer.getData('text/plain')).trim();
+        const candidate = text.split(/\r?\n/).find(line => line && !line.startsWith('#')) || '';
+        if (candidate.startsWith('file://')) {
+          try {
+            const url = new URL(candidate);
+            if (!url.hostname || url.hostname === 'localhost') path = decodeURIComponent(url.pathname);
+          } catch (_) {}
+        } else if (!files.length && candidate.startsWith('/')) path = candidate;
+      }
+      if (path) {
+        inputPath.value = path;
+        await probeFile(path);
+        status.textContent = 'Usando el archivo original, sin copiarlo.';
+      } else if (files.length) {
+        status.textContent = 'El navegador ocultó la ruta. Selecciona el archivo original en el diálogo; no se copiará.';
+        btnBrowse.click();
       }
     });
+    // Prevent a misplaced file drop from navigating away from the portal.
+    window.addEventListener('dragover', (event) => event.preventDefault());
+    window.addEventListener('drop', (event) => event.preventDefault());
 
     btnBrowseDepth.addEventListener('click', async () => {
       const res = await fetch('/api/pick-file', {
@@ -2013,6 +2093,12 @@
         });
         const data = await res.json();
         if (!data.error) {
+          dropzone.style.display = 'none';
+          framePreview.style.display = 'block';
+          framePreviewBadge.textContent = data.type === 'video' ? 'Loading frame 0…' : 'Image';
+          framePreviewImage.dataset.requestedFrame = '0';
+          framePreviewImage.dataset.totalFrames = data.type === 'video' ? String(data.frames) : '';
+          framePreviewImage.src = `/api/frame-preview?frame=0&t=${Date.now()}`;
           mediaInfoBox.style.display = 'grid';
           infoRes.textContent = `${data.width}x${data.height}`;
           infoFps.textContent = data.fps > 0 ? `${data.fps} fps` : 'Static';
@@ -2033,6 +2119,7 @@
 
     // Start Conversion
     btnStart.addEventListener('click', async () => {
+      if (selectingFile) return;
       const path = inputPath.value.trim();
       if (!path) {
         alert(t('media.dropzone_main') || "Please select a media file first.");
@@ -2071,13 +2158,13 @@
         const data = await res.json();
         if (data.error) {
           alert(data.error);
-          btnStart.disabled = false;
+          btnStart.disabled = selectingFile;
           btnCancel.style.display = 'none';
           progressBar.classList.remove('active');
         }
       } catch (e) {
         alert("Error starting conversion: " + e);
-        btnStart.disabled = false;
+        btnStart.disabled = selectingFile;
         btnCancel.style.display = 'none';
         progressBar.classList.remove('active');
       }
@@ -2097,12 +2184,12 @@
     btnOpenFolder.addEventListener('click', () => fetch('/api/open-folder', { method: 'POST' }));
     btnOpenFile.addEventListener('click', () => fetch('/api/open-output', { method: 'POST' }));
 
-    // Real-Time Progress Stream (SSE)
-    const eventSource = new EventSource('/api/progress-stream');
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+    // Progress monitor
+    function renderProgress(data) {
 
       if (data.status === 'running') {
+        dropzone.style.display = 'none';
+        framePreview.style.display = 'block';
         btnStart.disabled = true;
         btnCancel.style.display = 'inline-flex';
         statusLabel.textContent = t('monitor.status_running');
@@ -2111,11 +2198,18 @@
         progressBar.style.width = `${data.percent}%`;
         progressBar.classList.add('active');
         statFrame.textContent = `${data.current_frame} / ${data.total_frames}`;
+        const previousPreviewFrame = Number(framePreview.dataset.frame || -1);
+        if (data.current_frame >= 0 && data.current_frame !== previousPreviewFrame) {
+          framePreview.dataset.frame = data.current_frame;
+          framePreviewImage.dataset.requestedFrame = String(data.current_frame);
+          framePreviewImage.dataset.totalFrames = String(data.total_frames);
+          framePreviewImage.src = `/api/frame-preview?frame=${data.current_frame}&t=${Date.now()}`;
+        }
         statFps.textContent = `${data.fps.toFixed(1)} fps`;
         statEta.textContent = data.eta || '--:--';
         if (data.log) logTerminal.textContent = data.log;
       } else if (data.status === 'completed') {
-        btnStart.disabled = false;
+        btnStart.disabled = selectingFile;
         btnCancel.style.display = 'none';
         resultActions.style.display = 'grid';
         statusLabel.textContent = t('monitor.status_completed');
@@ -2134,14 +2228,31 @@
         });
         if (data.cadence) logTerminal.textContent += `\nCadencia: ${data.cadence.verdict} · ${data.cadence.introduced_duplicates} repeticiones detectadas en ${data.cadence.total_frames_analyzed} cuadros.`;
       } else if (data.status === 'error') {
-        btnStart.disabled = false;
+        btnStart.disabled = selectingFile;
         btnCancel.style.display = 'none';
         statusLabel.textContent = t('monitor.status_error');
         statusLabel.style.color = '#f87171';
         progressBar.classList.remove('active');
         logTerminal.textContent = data.log || "An error occurred.";
       }
-    };
+    }
+
+    // Use short requests rather than one persistent SSE connection. A browser
+    // may keep an SSE stream connected to a retiring server after a local
+    // portal restart, making a live conversion appear idle.
+    async function refreshProgress() {
+      if (document.hidden) return;
+      try {
+        const response = await fetch(`/api/status?t=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = await response.json();
+        renderProgress(data);
+      } catch (_) {
+        // A transient local-server failure will be retried on the next tick.
+      }
+    }
+    setInterval(refreshProgress, 1000);
+    refreshProgress();
 
     // ==========================================
     // Internationalization (i18n) Engine

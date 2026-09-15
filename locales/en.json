@@ -49,8 +49,8 @@
     "format_spatial": "Spatial Video MV-HEVC (Apple Vision Pro)",
     "render_mode_label": "Rendering Mode",
     "render_mode_rec": "RECOMMENDED",
-    "render_mode_right": "Standard (Right side only - Left eye pristine)",
-    "render_mode_both": "Symmetric (Both eyes warped)",
+    "render_mode_right": "One-sided (left eye pristine)",
+    "render_mode_both": "Symmetric (balanced deformation)",
     "slider_divergence": "3D Depth Intensity (Parallax)",
     "slider_convergence": "Convergence Plane (Zero-Parallax)",
     "slider_temporal": "Temporal Smoothing (Anti-Flicker)"
@@ -79,7 +79,7 @@
     "stat_fps": "Speed",
     "stat_eta": "Remaining Time",
     "log_ready": "Ready to start. Select a file and click Start 3D Conversion.",
-    "btn_start": "Start 3D Conversion",
+    "btn_start": "Start Processing",
     "btn_cancel": "Cancel Conversion",
     "btn_play": "Play 3D Media",
     "btn_open_folder": "Open Folder",
@@ -87,7 +87,7 @@
   },
   "tips": {
     "title": "Tips for Best Quality",
-    "tip1": "<b>Zero Ghosting:</b> <i>Standard (Right only)</i> mode keeps 100% native sharpness on the left eye, completely eliminating warping on subtitles and lines.",
+    "tip1": "<b>Lower distortion:</b> <i>Symmetric</i> mode splits displacement between both eyes while preserving total binocular depth.",
     "tip2": "<b>3D TVs (LG Cinema 3D / Samsung / Sony):</b> Use <b>Half-SBS</b> format. On your TV remote, press 3D and select <i>Side-by-Side</i>.",
     "tip3": "<b>Meta Quest / VR Headsets:</b> Use <b>Full-SBS</b> for maximum sharpness or <b>MV-HEVC</b> for Apple Vision Pro.",
     "tip4": "<b>Manual Retouching:</b> Check <i>Save Depth Map</i> to edit tricky scenes in Photoshop/After Effects and re-export in seconds with <i>Fast Re-export</i>."
@@ -130,5 +130,13 @@
     "download": "Download Web",
     "instructions": "Instructions",
     "usage_hint": "Basic usage: python convert_3d.py -i <video_or_image> [options]\nTo open GUI: python gui.py"
+  },
+  "cadence": {
+    "operation": "Operation",
+    "convert": "Convert 2D to 3D",
+    "repair": "Repair stutter in an existing video",
+    "layout": "Input video layout",
+    "hint": "Interpolates motion at the same frame rate, preserving both eyes and audio. Test a short clip first: motion artifacts are possible.",
+    "check": "Check motion continuity after conversion (SBS)"
   }
 }

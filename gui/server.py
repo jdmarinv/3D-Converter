@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -52,8 +52,16 @@ conversion_state = {
     "log": "Ready.",
     "output_file": "",
     "depth_file": "",
-    "process": None
+    "process": None,
+    "input_file": "",
+    "start_time": 0.0,
+    "source_fps": 0.0,
+    "preview_frame": -1,
+    "preview_jpeg": None
 }
+
+selected_media = {"path": "", "fps": 0.0}
+preview_lock = threading.Lock()
 
 class ConversionRequest(BaseModel):
     operation: Literal["convert", "repair"] = "convert"
@@ -63,7 +71,7 @@ class ConversionRequest(BaseModel):
     output_path: Optional[str] = None
     format: str = "hsbs"
     profile: Optional[str] = "balanced"
-    render_mode: str = "right_only"
+    render_mode: str = "both"
     depth_intensity: float = 0.022
     convergence: float = 0.50
     pop_out: float = 0.0
@@ -199,6 +207,7 @@ async def probe_file(request: Request):
         if img is None:
             return {"error": "Invalid image"}
         h, w = img.shape[:2]
+        selected_media.update(path=str(p), fps=0.0)
         return {
             "type": "image",
             "name": p.name,
@@ -214,6 +223,7 @@ async def probe_file(request: Request):
         try:
             info = get_media_info(p)
             audio = has_audio_stream(p)
+            selected_media.update(path=str(p), fps=info["fps"])
             return {
                 "type": "video",
                 "name": p.name,
@@ -290,6 +300,12 @@ def run_conversion_worker(req):
                 if match:
                     conversion_state.update(percent=float(match[1]), current_frame=int(match[2]),
                                             total_frames=int(match[3]))
+                speed = re.search(r"([0-9.]+)(frame/s|s/frame)", line)
+                if speed:
+                    value = float(speed[1])
+                    conversion_state["fps"] = value if speed[2] == "frame/s" else 1 / max(value, 0.001)
+                eta = re.search(r"<([^,\]]+)", line)
+                if eta: conversion_state["eta"] = eta[1]
                 conversion_state["log"] = line[-2000:]
         proc.wait()
         if conversion_state.get("cancel_requested"):
@@ -304,6 +320,7 @@ def run_conversion_worker(req):
     except Exception as exc:
         conversion_state.update(status="error", log=str(exc))
     finally:
+        if proc and proc.stdout: proc.stdout.close()
         conversion_state["process"] = None
 
 
@@ -321,7 +338,7 @@ async def start_conversion(req: ConversionRequest):
         source, output, is_video = resolve_output(req)
         error = None
         if not source.is_file(): error = "Input file does not exist."
-        elif source == output or output.exists(): error = "Choose a new output path; existing files are preserved."
+        elif source == output: error = "Choose a new output path; existing files are preserved."
         elif req.operation == "repair" and not is_video: error = "Motion repair requires a video."
         elif req.operation == "repair" and output.suffix.lower() != ".mp4": error = "Repair output must be MP4."
         elif req.custom_depth and not Path(req.custom_depth).is_file(): error = "Depth file does not exist."
@@ -334,7 +351,9 @@ async def start_conversion(req: ConversionRequest):
         if error: return JSONResponse(status_code=400, content={"error": error})
         conversion_state.update(status="running", percent=0.0, current_frame=0, total_frames=0,
             fps=0.0, eta="", log="Starting…", output_file=str(output), depth_file="",
-            cadence=None, process=None, cancel_requested=False)
+            cadence=None, process=None, cancel_requested=False, input_file=str(source),
+            start_time=req.start_time, source_fps=(info["fps"] if is_video else 0.0),
+            preview_frame=-1, preview_jpeg=None)
         if req.operation == "convert" and req.save_depth:
             conversion_state["depth_file"] = str(output.with_name(output.stem + ("_depth.mp4" if is_video else "_depth.png")))
         threading.Thread(target=run_conversion_worker, args=(req,), daemon=True).start()
@@ -351,7 +370,46 @@ async def stop_conversion():
 
 @app.get("/api/status")
 async def get_status():
-    return {k: v for k, v in conversion_state.items() if k != "process"}
+    return {k: v for k, v in conversion_state.items()
+            if k not in ("process", "preview_jpeg")}
+
+
+@app.get("/api/frame-preview")
+async def frame_preview(frame: Optional[int] = None):
+    """Return the source frame matching the current conversion frame."""
+    running = conversion_state.get("status") == "running"
+    source = Path(conversion_state.get("input_file", "") if running
+                  else selected_media.get("path", ""))
+    fps = float(conversion_state.get("source_fps", 0.0) if running
+                else selected_media.get("fps", 0.0))
+    current_frame = int(conversion_state.get("current_frame", 0)) if running else 0
+    total_frames = int(conversion_state.get("total_frames", 0))
+    frame = current_frame if frame is None else max(0, int(frame))
+    if total_frames > 0:
+        frame = min(frame, total_frames - 1)
+    start = float(conversion_state.get("start_time", 0.0)) if running else 0.0
+    if not source.is_file() or fps <= 0:
+        return Response(status_code=404)
+
+    with preview_lock:
+        cached_frame = conversion_state.get("preview_frame", -1)
+        cached_jpeg = conversion_state.get("preview_jpeg")
+        if cached_jpeg is not None and cached_frame == frame:
+            return Response(cached_jpeg, media_type="image/jpeg",
+                            headers={"Cache-Control": "no-store"})
+        timestamp = start + (frame / fps)
+        result = subprocess.run([
+            str(BIN_DIR / "ffmpeg"), "-hide_banner", "-loglevel", "error",
+            "-ss", f"{timestamp:.6f}", "-i", str(source), "-frames:v", "1",
+            "-vf", "scale=640:-2:flags=fast_bilinear", "-q:v", "4",
+            "-f", "image2pipe", "-vcodec", "mjpeg", "-"
+        ], capture_output=True, timeout=15)
+        if result.returncode or not result.stdout:
+            return Response(status_code=404)
+        conversion_state["preview_frame"] = frame
+        conversion_state["preview_jpeg"] = result.stdout
+        return Response(result.stdout, media_type="image/jpeg",
+                        headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/progress-stream")

@@ -49,8 +49,8 @@
     "format_spatial": "Spatial Video MV-HEVC (Apple Vision Pro)",
     "render_mode_label": "Modo de Renderizado",
     "render_mode_rec": "RECOMENDADO",
-    "render_mode_right": "Standard (Right side only - Ojo izq. intacto)",
-    "render_mode_both": "Simétrico (Ambos ojos desplazados)",
+    "render_mode_right": "Unilateral (ojo izquierdo intacto)",
+    "render_mode_both": "Simétrico (deformación equilibrada)",
     "slider_divergence": "Intensidad de Relieve 3D (Parallax)",
     "slider_convergence": "Plano de Convergencia (Zero-Parallax)",
     "slider_temporal": "Suavizado Temporal Anti-Flicker"
@@ -79,7 +79,7 @@
     "stat_fps": "Velocidad",
     "stat_eta": "Tiempo Restante",
     "log_ready": "Listo para iniciar. Selecciona un archivo y presiona Iniciar Conversión.",
-    "btn_start": "Iniciar Conversión 3D",
+    "btn_start": "Iniciar procesamiento",
     "btn_cancel": "Cancelar Conversión",
     "btn_play": "Reproducir 3D",
     "btn_open_folder": "Abrir Carpeta",
@@ -87,7 +87,7 @@
   },
   "tips": {
     "title": "Consejos para la Mejor Calidad",
-    "tip1": "<b>Sin Ghosting:</b> El modo <i>Standard (Right only)</i> conserva el 100% de la nitidez nativa en el ojo izquierdo, evitando que textos y líneas se deformen.",
+    "tip1": "<b>Menos distorsión:</b> El modo <i>Simétrico</i> reparte el desplazamiento entre ambos ojos y conserva la profundidad binocular total.",
     "tip2": "<b>Televisores 3D (LG Cinema 3D / Samsung / Sony):</b> Usa el formato <b>Half-SBS</b>. En tu control remoto presiona el botón 3D y selecciona <i>Lado a Lado</i>.",
     "tip3": "<b>Meta Quest / Visores VR:</b> Puedes usar <b>Full-SBS</b> para máxima nitidez o <b>MV-HEVC</b> para Apple Vision Pro.",
     "tip4": "<b>Edición manual:</b> Marca <i>Guardar Mapa de Profundidad</i> para retocar máscaras complejas en Photoshop/After Effects y re-exportar en 3 segundos con <i>Fast Re-export</i>."
@@ -130,5 +130,13 @@
     "download": "Descarga Web",
     "instructions": "Instrucciones",
     "usage_hint": "Uso básico: python convert_3d.py -i <video_o_imagen> [opciones]\nPara abrir la interfaz gráfica: python gui.py"
+  },
+  "cadence": {
+    "operation": "Operación",
+    "convert": "Convertir 2D a 3D",
+    "repair": "Reparar tirones de un video existente",
+    "layout": "Formato del video de entrada",
+    "hint": "Interpola movimiento a los mismos fps, conservando ambos ojos y el audio. Prueba un tramo corto primero: puede introducir deformaciones.",
+    "check": "Comprobar continuidad del movimiento al terminar (SBS)"
   }
 }

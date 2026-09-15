@@ -3,6 +3,7 @@ import argparse
 import json
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 from fractions import Fraction
 from .config import FFMPEG_BIN
@@ -13,8 +14,8 @@ def repair_defective_cadence(input_path, output_path, mode="interpolate",
                              diff_threshold=1.5, target_fps_rational=None,
                              layout="2d", start_time=0.0, duration=0.0):
     source, output = Path(input_path).resolve(), Path(output_path).resolve()
-    if source == output or output.exists():
-        raise ValueError("Choose a new output file; original and existing files are preserved.")
+    if source == output:
+        raise ValueError("Choose a new output file; original file is preserved.")
     if mode != "interpolate":
         raise ValueError("Decimation without motion reconstruction changes timing and is unsupported.")
     if layout not in ("2d", "sbs", "hsbs"):
@@ -52,19 +53,23 @@ def repair_defective_cadence(input_path, output_path, mode="interpolate",
                '-c:a', 'aac', '-ac', '2', '-b:a', '192k', '-t', str(seconds),
                '-movflags', '+faststart', '-progress', 'pipe:1', str(temp)]
         total = round(seconds * float(Fraction(fps)))
+        started = time.monotonic()
         with tempfile.TemporaryFile(mode='w+') as errors:
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=errors, text=True)
             try:
                 for line in proc.stdout:
                     if line.startswith('frame='):
                         current = min(int(line.split('=')[1]), total)
+                        rate = current / max(time.monotonic() - started, 0.01)
+                        remaining = int((total-current) / max(rate, 0.01))
                         print('PORTAL_PROGRESS ' + json.dumps({'current_frame': current,
-                            'total_frames': total, 'percent': 100 * current / max(total, 1),
+                            'total_frames': total, 'fps': round(rate, 2), 'eta': f'{remaining//60:02d}:{remaining%60:02d}', 'percent': 100 * current / max(total, 1),
                             'log': f'Interpolating motion: {current}/{total} frames'}), flush=True)
                 if proc.wait() != 0:
                     errors.seek(0)
                     raise RuntimeError(errors.read()[-2000:] or 'FFmpeg repair failed')
             finally:
+                if proc.stdout: proc.stdout.close()
                 if proc.poll() is None:
                     proc.terminate()
                     proc.wait()
