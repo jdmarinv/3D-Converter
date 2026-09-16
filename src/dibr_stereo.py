@@ -4,7 +4,7 @@ Synthesizes high-fidelity Left and Right stereo eye perspectives.
 """
 import numpy as np
 import cv2
-from typing import Tuple
+from typing import Optional, Tuple
 
 class StereoSynthesizer:
     def __init__(
@@ -105,7 +105,8 @@ class StereoSynthesizer:
     def render_stereo(
         self,
         rgb: np.ndarray,
-        depth: np.ndarray
+        depth: np.ndarray,
+        zero_disparity_mask: Optional[np.ndarray] = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Synthesizes Left and Right stereo perspectives.
@@ -119,6 +120,13 @@ class StereoSynthesizer:
 
         if self.edge_refine:
             depth = self._refine_depth_edges(rgb, depth)
+
+        # Apply matte protection after every depth curve/filter so cinematic
+        # styling and bilateral refinement cannot introduce disparity into
+        # letterbox or pillarbox bars.
+        if zero_disparity_mask is not None:
+            depth = depth.copy()
+            depth[zero_disparity_mask] = self.convergence
 
         if self.render_mode == "right_only":
             left_eye = rgb.copy() # 100% original pristine frame

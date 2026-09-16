@@ -97,8 +97,8 @@
   "options": {
     "save_depth_label": "Guardar Mapa de Profundidad (_depth.mp4 / _depth.png)",
     "save_depth_desc": "Te permite guardar el mapa en escala de grises para retocarlo manualmente en Photoshop o DaVinci Resolve.",
-    "crop_label": "Detección Automática de Barras Negras (Letterbox crop)",
-    "crop_desc": "Evita que los bordes negros deformen el plano frontal o generen cortes artificiales.",
+    "crop_label": "Protección Dinámica de Barras Negras (segura para IMAX)",
+    "crop_desc": "Neutraliza las barras al calcular profundidad, conservando el cuadro completo y los cambios de relación de aspecto IMAX.",
     "custom_depth_label": "Usar Mapa de Profundidad Externo (Fast Re-export)",
     "custom_depth_hint": "Salta la IA y re-exporta en segundos.",
     "custom_depth_placeholder": "Ruta del depth map previo o editado",

@@ -22,7 +22,13 @@ from src.config import (
 )
 from src.depth_engine import DepthEngine, DepthDecimator
 from src.dibr_stereo import StereoSynthesizer
-from src.preprocessor import get_media_info, detect_black_bars, read_video_frames, has_audio_stream
+from src.preprocessor import (
+    get_media_info,
+    read_video_frames,
+    has_audio_stream,
+    prepare_depth_input,
+    neutralize_bar_depth,
+)
 from src.checkpoint_manager import CheckpointManager, concatenate_segments
 from src.cadence_analyzer import analyze_visual_cadence, print_report
 from src.cadence_repair import repair_defective_cadence
@@ -141,18 +147,12 @@ def process_video(
     if batch_size > 1:
         print(f"  • Batch Size: {batch_size} frames (Strict FIFO order)")
 
-    crop_filter = None
     if auto_crop:
-        print("[Video Mode] Checking for letterboxing (black bars)...")
-        crop_filter = detect_black_bars(input_path)
-        if crop_filter:
-            print(f"  • Detected letterboxing: auto-applying '{crop_filter}'")
+        print("[Video Mode] Dynamic black-bar masking enabled (full frame preserved)")
 
-    # Determine dimensions for output
+    # Output dimensions always match the source. Variable-aspect IMAX titles
+    # must never be resized when letterbox bars appear or disappear.
     w, h = info["width"], info["height"]
-    if crop_filter:
-        parts = crop_filter.replace("crop=", "").split(":")
-        w, h = int(parts[0]), int(parts[1])
 
     out_w = w * 2 if fmt == "sbs" else w
     out_h = h
@@ -193,7 +193,7 @@ def process_video(
     if custom_depth_path and custom_depth_path.exists():
         print(f"[Video Mode] Re-export mode: using custom depth map from {custom_depth_path.name}")
         custom_depth_gen = read_video_frames(
-            custom_depth_path, crop_filter=crop_filter,
+            custom_depth_path,
             start_time=start_time if start_time > 0 else None,
             duration=duration if duration > 0 else None,
             start_frame=start_frame if start_frame > 0 else None,
@@ -233,7 +233,7 @@ def process_video(
     decimator = DepthDecimator(stride=depth_stride) if depth_stride > 1 else None
 
     frame_generator = read_video_frames(
-        input_path, crop_filter=crop_filter,
+        input_path,
         start_time=start_time if start_time > 0 else None,
         duration=duration if duration > 0 else None,
         start_frame=start_frame if start_frame > 0 else None,
@@ -245,6 +245,16 @@ def process_video(
 
     def write_single_frame(idx: int, rgb_frame: np.ndarray, depth_map: np.ndarray):
         nonlocal frames_written
+        zero_disparity_mask = None
+        if auto_crop:
+            _, active_bounds = prepare_depth_input(rgb_frame)
+            depth_map = neutralize_bar_depth(
+                depth_map, active_bounds, synthesizer.convergence
+            )
+            top, bottom, left, right = active_bounds
+            if top or bottom < h or left or right < w:
+                zero_disparity_mask = np.ones((h, w), dtype=bool)
+                zero_disparity_mask[top:bottom, left:right] = False
         # Optional depth map saving
         if depth_writer:
             depth_vis = (depth_map * 255.0).astype(np.uint8)
@@ -252,7 +262,9 @@ def process_video(
             depth_writer.write_frame(depth_rgb)
 
         # Stereo Synthesis: STRICTLY use current rgb_frame
-        left, right = synthesizer.render_stereo(rgb_frame, depth_map)
+        left, right = synthesizer.render_stereo(
+            rgb_frame, depth_map, zero_disparity_mask=zero_disparity_mask
+        )
 
         # Format Composition
         if fmt == "spatial":
@@ -283,7 +295,8 @@ def process_video(
             elif decimator:
                 # Decimated depth mode: depth computed every N frames, RGB strictly untouched!
                 if decimator.should_compute(idx):
-                    depth = depth_engine.estimate_depth(rgb_frame, apply_temporal_smoothing=True)
+                    depth_input = prepare_depth_input(rgb_frame)[0] if auto_crop else rgb_frame
+                    depth = depth_engine.estimate_depth(depth_input, apply_temporal_smoothing=True)
                     decimator.register_computed_depth(depth)
                 else:
                     depth = decimator.get_depth_for_frame(idx)
@@ -293,7 +306,7 @@ def process_video(
                 # Batch processing mode
                 batch_buffer.append((idx, rgb_frame))
                 if len(batch_buffer) >= batch_size:
-                    imgs = [f for _, f in batch_buffer]
+                    imgs = [prepare_depth_input(f)[0] if auto_crop else f for _, f in batch_buffer]
                     depth_maps = depth_engine.estimate_depth_batch(imgs, apply_temporal_smoothing=True)
                     for (b_idx, b_rgb), b_depth in zip(batch_buffer, depth_maps):
                         write_single_frame(b_idx, b_rgb, b_depth)
@@ -301,7 +314,8 @@ def process_video(
                     batch_buffer.clear()
             else:
                 # Standard single-frame mode
-                depth = depth_engine.estimate_depth(rgb_frame, apply_temporal_smoothing=True)
+                depth_input = prepare_depth_input(rgb_frame)[0] if auto_crop else rgb_frame
+                depth = depth_engine.estimate_depth(depth_input, apply_temporal_smoothing=True)
                 write_single_frame(idx, rgb_frame, depth)
                 pbar.update(1)
 
@@ -314,7 +328,7 @@ def process_video(
 
         # Flush any remaining frames in batch buffer
         if batch_buffer:
-            imgs = [f for _, f in batch_buffer]
+            imgs = [prepare_depth_input(f)[0] if auto_crop else f for _, f in batch_buffer]
             depth_maps = depth_engine.estimate_depth_batch(imgs, apply_temporal_smoothing=True)
             for (b_idx, b_rgb), b_depth in zip(batch_buffer, depth_maps):
                 write_single_frame(b_idx, b_rgb, b_depth)
@@ -359,7 +373,7 @@ def process_video(
         print("\n[Diagnostics] Running Visual Cadence & Temporal Continuity Audit...")
         try:
             report = analyze_visual_cadence(input_path, output_path, fmt=fmt,
-                                            start_time=start_time, crop_filter=crop_filter)
+                                            start_time=start_time, crop_filter=None)
             import json
             report_path = output_path.with_suffix(output_path.suffix + ".cadence.json")
             report_path.write_text(json.dumps(report, indent=2))
@@ -484,7 +498,7 @@ def main():
     parser.add_argument(
         "--no-crop",
         action="store_true",
-        help="Disable automatic black bar letterbox detection"
+        help="Disable dynamic black-bar protection for depth inference"
     )
     parser.add_argument(
         "--batch-size",

@@ -18,7 +18,7 @@ Features native hardware acceleration across platforms:
 - **Anti-Ghosting Stereo Synthesis (`right_only` mode):** Keeps the original left eye 100% untouched and unwarped. Completely eliminates the line deformation, blurriness, and double-vision ghosting typical of naive DIBR converters.
 - **Bilateral Edge Snapping:** Sharpens depth boundaries along high-contrast lines and subtitle edges to prevent warped text.
 - **Temporal Coherence Filter:** Eliminates inter-frame depth flickering in video while adapting to fast-moving scene cuts.
-- **Automated Black Bar Letterbox Cropping:** Detects and crops letterboxing to prevent black margins from creating artificial depth planes.
+- **Dynamic Black Bar Protection:** Detects letterbox or pillarbox bars per frame, neutralizes them only for depth inference, and preserves the full canvas through IMAX aspect-ratio changes.
 - **Fast Depth Re-Export:** Save depth maps (`_depth.mp4` / `_depth.png`) for manual grading in Photoshop, DaVinci Resolve, or After Effects, then re-render stereo in seconds without re-running AI inference.
 - **Multi-Format 3D Output:**
   - **Half-SBS (Side-by-Side):** Ready for 3D TVs (LG Cinema 3D, Samsung 3D, Sony) and Jellyfin / Plex / Roku streaming.
@@ -263,7 +263,7 @@ python convert_3d.py -i movie.mp4 -f hsbs -s 30 -t 10
 | `--custom-depth` | *None* | Path to external depth map file. Skips AI model inference for instant stereo synthesis. |
 | `-s`, `--start-time`| `0.0` | Start time in seconds for video conversion. |
 | `-t`, `--duration` | `0.0` | Duration in seconds to convert (`0.0` = full video). |
-| `--no-crop` | Disabled | Disable automatic letterbox black bar detection. |
+| `--no-crop` | Disabled | Disable dynamic black-bar protection. The option name remains for CLI compatibility; enabled protection does not crop the output. |
 | `--batch-size` | `1` | Batch size for parallel depth inference on GPU (strict FIFO order). |
 | `--depth-stride` | `1` | Compute depth every N frames while preserving 100% genuine RGB frame motion. |
 | `--resume` | Disabled | Resume an interrupted conversion from the last frame-accurate checkpoint. |

@@ -14,6 +14,7 @@ LOCALES_DIR = Path(__file__).resolve().parent.parent / "locales"
 
 # In-memory translation cache: {"en": {...}, "es": {...}}
 _TRANSLATION_CACHE: Dict[str, Dict[str, Any]] = {}
+_TRANSLATION_MTIMES: Dict[str, int] = {}
 _DEFAULT_LANG = "en"
 _ACTIVE_LANG = "en"
 
@@ -70,9 +71,6 @@ def load_locale(lang_code: str) -> Dict[str, Any]:
     """
     Loads JSON translation strings for a language into cache.
     """
-    if lang_code in _TRANSLATION_CACHE:
-        return _TRANSLATION_CACHE[lang_code]
-
     target_file = LOCALES_DIR / f"{lang_code}.json"
     if not target_file.exists():
         # Fallback to default if requested language file doesn't exist
@@ -80,9 +78,14 @@ def load_locale(lang_code: str) -> Dict[str, Any]:
 
     if target_file.exists():
         try:
+            mtime = target_file.stat().st_mtime_ns
+            if (lang_code in _TRANSLATION_CACHE
+                    and _TRANSLATION_MTIMES.get(lang_code) == mtime):
+                return _TRANSLATION_CACHE[lang_code]
             with open(target_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 _TRANSLATION_CACHE[lang_code] = data
+                _TRANSLATION_MTIMES[lang_code] = mtime
                 return data
         except Exception as e:
             print(f"[i18n Warning] Could not parse locale {target_file}: {e}", file=sys.stderr)

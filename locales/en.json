@@ -97,8 +97,8 @@
   "options": {
     "save_depth_label": "Save Depth Map (_depth.mp4 / _depth.png)",
     "save_depth_desc": "Saves grayscale depth map for manual editing in Photoshop or DaVinci Resolve.",
-    "crop_label": "Automatic Black Bar Detection (Letterbox crop)",
-    "crop_desc": "Prevents black borders from distorting foreground depth or creating harsh edge seams.",
+    "crop_label": "Dynamic Black Bar Protection (IMAX safe)",
+    "crop_desc": "Neutralizes bars for depth inference while preserving the complete frame and variable IMAX aspect ratios.",
     "custom_depth_label": "Use External Depth Map (Fast Re-export)",
     "custom_depth_hint": "Skips AI inference and re-renders stereo in seconds.",
     "custom_depth_placeholder": "Path to pre-computed or edited depth map",

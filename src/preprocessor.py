@@ -12,6 +12,93 @@ import numpy as np
 
 from .config import FFMPEG_BIN, FFPROBE_BIN
 
+
+def detect_active_image_bounds(
+    rgb: np.ndarray,
+    black_threshold: int = 16,
+    black_ratio: float = 0.985,
+    min_bar_size: int = 4,
+    max_bar_fraction: float = 0.32,
+) -> Tuple[int, int, int, int]:
+    """Find black border bars without changing the frame dimensions.
+
+    Returns ``(top, bottom, left, right)`` using exclusive bottom/right
+    coordinates. Detection is deliberately limited to the outer 32% so a
+    fade-to-black or a naturally dark shot is not mistaken for letterboxing.
+    """
+    if rgb.ndim != 3 or rgb.shape[0] < 2 or rgb.shape[1] < 2:
+        raise ValueError("Expected an RGB image with shape HxWx3")
+
+    # Integer luma approximation avoids another OpenCV conversion per frame.
+    gray = (
+        rgb[..., 0].astype(np.uint16) * 54
+        + rgb[..., 1].astype(np.uint16) * 183
+        + rgb[..., 2].astype(np.uint16) * 19
+    ) >> 8
+    row_black = np.mean(gray <= black_threshold, axis=1) >= black_ratio
+    col_black = np.mean(gray <= black_threshold, axis=0) >= black_ratio
+
+    def edge_count(lines: np.ndarray, reverse: bool = False) -> int:
+        limit = max(min_bar_size, int(len(lines) * max_bar_fraction))
+        count = 0
+        iterable = lines[::-1] if reverse else lines
+        for is_black in iterable[:limit]:
+            if not is_black:
+                break
+            count += 1
+        # If darkness continues past the maximum plausible bar size, this is
+        # probably a fade or dark frame rather than a matte.
+        if count == limit and limit < len(lines) and iterable[limit]:
+            return 0
+        return count if count >= min_bar_size else 0
+
+    top = edge_count(row_black)
+    bottom_bar = edge_count(row_black, reverse=True)
+    left = edge_count(col_black)
+    right_bar = edge_count(col_black, reverse=True)
+    bottom = rgb.shape[0] - bottom_bar
+    right = rgb.shape[1] - right_bar
+    if bottom <= top or right <= left:
+        return 0, rgb.shape[0], 0, rgb.shape[1]
+    return top, bottom, left, right
+
+
+def prepare_depth_input(rgb: np.ndarray) -> Tuple[np.ndarray, Tuple[int, int, int, int]]:
+    """Neutralize black bars for depth inference while preserving the canvas.
+
+    Border pixels are extended from the active image. This prevents solid
+    mattes from skewing model normalization without zooming or cropping the
+    source frame.
+    """
+    top, bottom, left, right = detect_active_image_bounds(rgb)
+    prepared = rgb.copy()
+    if top:
+        prepared[:top, left:right] = prepared[top:top + 1, left:right]
+    if bottom < rgb.shape[0]:
+        prepared[bottom:, left:right] = prepared[bottom - 1:bottom, left:right]
+    if left:
+        prepared[:, :left] = prepared[:, left:left + 1]
+    if right < rgb.shape[1]:
+        prepared[:, right:] = prepared[:, right - 1:right]
+    return prepared, (top, bottom, left, right)
+
+
+def neutralize_bar_depth(
+    depth: np.ndarray,
+    bounds: Tuple[int, int, int, int],
+    convergence: float,
+) -> np.ndarray:
+    """Put matte bars on the zero-disparity plane in a full-size depth map."""
+    top, bottom, left, right = bounds
+    if top == 0 and bottom == depth.shape[0] and left == 0 and right == depth.shape[1]:
+        return depth
+    result = depth.copy()
+    result[:top, :] = convergence
+    result[bottom:, :] = convergence
+    result[:, :left] = convergence
+    result[:, right:] = convergence
+    return result
+
 def parse_rational_fraction(s: Optional[str]) -> Optional[Tuple[int, int]]:
     """
     Parses a string fraction (e.g. '24000/1001', '24/1') or float into (numerator, denominator).
@@ -273,4 +360,3 @@ def read_video_frames(
         if process.stdout:
             process.stdout.close()
         process.wait()
-
