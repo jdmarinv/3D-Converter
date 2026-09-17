@@ -66,8 +66,10 @@ history_thumbnail_cache: dict[str, tuple[int, int, bytes]] = {}
 history_thumbnail_lock = threading.Lock()
 
 class ConversionRequest(BaseModel):
-    operation: Literal["convert", "repair"] = "convert"
+    operation: Literal["convert", "repair", "stereo_repair"] = "convert"
     repair_layout: Literal["2d", "sbs", "hsbs"] = "hsbs"
+    repair_source_path: Optional[str] = None
+    repair_ranges: str = "auto"
     check_cadence: bool = True
     input_path: str
     output_path: Optional[str] = None
@@ -259,7 +261,9 @@ def resolve_output(req):
     if is_video and req.duration > 0:
         clip_tag = f"_{time_label(req.start_time)}s-{time_label(req.start_time + req.duration)}s"
     suffix = ("_repaired.mp4" if req.operation == "repair" else
+              ("_stereo_repaired.mp4" if req.operation == "stereo_repair" else
               (f"{clip_tag}_3d_spatial.mov" if req.format == "spatial" else f"{clip_tag}_3d_{req.format}.mp4")) if is_video else f"_3d_{req.format}{source.suffix}"
+             )
     output = Path(req.output_path).expanduser().resolve() if req.output_path else DEFAULT_OUTPUT_DIR / (source.stem + suffix)
     if not req.output_path and output.exists():
         base_stem = output.stem
@@ -277,6 +281,19 @@ def build_conversion_command(req):
         return [sys.executable, "-u", "-m", "src.cadence_repair", "-i", str(source),
                 "-o", str(output), "--layout", req.repair_layout,
                 "--start-time", str(req.start_time), "--duration", str(req.duration)]
+    if req.operation == "stereo_repair":
+        cmd = [sys.executable, "-u", "-m", "src.stereo_artifact_repair",
+               "--source-2d", str(Path(req.repair_source_path).expanduser().resolve()),
+               "--converted-3d", str(source), "--output", str(output),
+               "--layout", req.repair_layout, "--repair-ranges", req.repair_ranges,
+               "--depth-intensity", str(req.depth_intensity),
+               "--convergence", str(req.convergence), "--pop-out", str(req.pop_out),
+               "--temporal-smooth", str(req.temporal_smooth),
+               "--style-3d", req.style_3d or "natural",
+               "--depth-profile", req.depth_profile or "balanced"]
+        if not req.auto_crop:
+            cmd.append("--no-crop")
+        return cmd
     intensity = req.depth_intensity
     if req.strength_3d is not None:
         intensity = round(req.strength_3d * 0.005, 4)
@@ -530,6 +547,10 @@ async def start_conversion(req: ConversionRequest):
         elif source == output: error = "Choose a new output path; existing files are preserved."
         elif req.operation == "repair" and not is_video: error = "Motion repair requires a video."
         elif req.operation == "repair" and output.suffix.lower() != ".mp4": error = "Repair output must be MP4."
+        elif req.operation == "stereo_repair" and not is_video: error = "Stereo repair requires an SBS video."
+        elif req.operation == "stereo_repair" and req.repair_layout not in ("hsbs", "sbs"): error = "Stereo repair requires HSBS or Full-SBS layout."
+        elif req.operation == "stereo_repair" and not req.repair_source_path: error = "Select the original synchronized 2D master."
+        elif req.operation == "stereo_repair" and not Path(req.repair_source_path).expanduser().is_file(): error = "The original 2D master does not exist."
         elif req.custom_depth and not Path(req.custom_depth).is_file(): error = "Depth file does not exist."
         elif is_video:
             try:

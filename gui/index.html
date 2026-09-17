@@ -571,6 +571,38 @@
       box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
     }
 
+    .repair-workflow {
+      margin-top: 16px;
+      padding: 18px;
+      border: 1px solid rgba(6, 182, 212, 0.28);
+      border-radius: var(--radius-md);
+      background: rgba(6, 182, 212, 0.055);
+      display: grid;
+      gap: 16px;
+    }
+    .repair-workflow[hidden], #manual-repair-ranges[hidden] { display: none !important; }
+
+    .repair-step { display: grid; gap: 7px; }
+    .repair-step-label {
+      color: #f8fafc;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .repair-step-help {
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .repair-file-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+    .repair-summary {
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
+      background: rgba(99, 102, 241, 0.10);
+      color: #cbd5e1;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
     .btn {
       padding: 10px 16px;
       border-radius: var(--radius-sm);
@@ -1757,7 +1789,7 @@
               <line x1="17" y1="7" x2="22" y2="7" />
             </svg>
           </div>
-          <span data-i18n="media.source_title">Source Media (2D)</span>
+          <span id="media-card-title-text" data-i18n="media.source_title">Source Media (2D)</span>
         </div>
 
         <div class="file-dropzone" id="dropzone" role="button" tabindex="0" aria-label="Dropzone for video or image">
@@ -1768,7 +1800,7 @@
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
           </div>
-          <p style="font-size: 14px; font-weight: 600; color: #f8fafc;" data-i18n="media.dropzone_main">Click or drag a video or image here</p>
+          <p id="dropzone-main-text" style="font-size: 14px; font-weight: 600; color: #f8fafc;" data-i18n="media.dropzone_main">Click or drag a video or image here</p>
           <p style="font-size: 12px; color: var(--text-muted);" data-i18n="media.dropzone_sub">Supports MP4, MOV, MKV, PNG, JPG (Letterbox detected automatically)</p>
         </div>
 
@@ -1781,7 +1813,8 @@
           </button>
         </div>
 
-        <div class="file-input-row">
+        <div id="primary-file-label" class="repair-step-label" style="margin-top:14px;" data-i18n="cadence.stereo_primary_file" hidden>1. Existing 3D conversion with artifacts</div>
+        <div class="file-input-row" style="margin-top:7px;">
           <input type="text" id="input-path" class="text-input" data-i18n-placeholder="media.input_placeholder" placeholder="File path (e.g. /path/to/video.mp4)" aria-label="Media File Path">
           <button id="btn-browse" class="btn btn-secondary" data-i18n="media.btn_browse">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1796,7 +1829,37 @@
           <select id="operation" class="text-input">
             <option value="convert" data-i18n="cadence.convert">Convert 2D to 3D</option>
             <option value="repair" data-i18n="cadence.repair">Repair stutter in an existing video</option>
+            <option value="stereo_repair" data-i18n="cadence.stereo_repair">Repair stereo artifacts by shot</option>
           </select>
+        </div>
+        <div id="stereo-repair-options" class="repair-workflow" hidden>
+          <div class="repair-step">
+            <label class="repair-step-label" for="repair-source-path" data-i18n="cadence.stereo_source_label">2. Original 2D master</label>
+            <div class="repair-file-row">
+              <input id="repair-source-path" class="text-input" type="text" data-i18n-placeholder="cadence.stereo_source_placeholder" placeholder="Select the synchronized original 2D movie">
+              <button type="button" id="btn-browse-repair-source" class="btn btn-secondary" data-i18n="media.btn_browse">Browse…</button>
+            </div>
+            <div class="repair-step-help" data-i18n="cadence.stereo_source_help">This must be the exact 2D source used to create the 3D conversion.</div>
+          </div>
+          <div class="repair-step">
+            <label class="repair-step-label" for="stereo-repair-layout" data-i18n="cadence.stereo_layout_label">3. Format of the existing 3D file</label>
+            <select id="stereo-repair-layout" class="text-input">
+              <option value="hsbs" data-i18n="cadence.stereo_layout_hsbs">Half SBS — two compressed images side by side</option>
+              <option value="sbs" data-i18n="cadence.stereo_layout_sbs">Full SBS — two full-width images side by side</option>
+            </select>
+          </div>
+          <div class="repair-step">
+            <label class="repair-step-label" for="repair-detection-mode" data-i18n="cadence.stereo_detection_label">4. Which shots should be repaired?</label>
+            <select id="repair-detection-mode" class="text-input">
+              <option value="auto" data-i18n="cadence.stereo_detection_auto">Detect damaged shots automatically (recommended)</option>
+              <option value="manual" data-i18n="cadence.stereo_detection_manual">Enter known time ranges manually</option>
+            </select>
+            <div id="manual-repair-ranges" hidden>
+              <input id="repair-ranges" class="text-input" type="text" data-i18n-placeholder="cadence.stereo_ranges_placeholder" placeholder="Example: 34-39, 52.5-55">
+              <div class="repair-step-help" style="margin-top:6px;" data-i18n="cadence.stereo_ranges_help">Enter start-end times in seconds, separated by commas.</div>
+            </div>
+          </div>
+          <div class="repair-summary" data-i18n="cadence.stereo_summary">The scanner will list the exact damaged shots first. Only those shots will be reconstructed with Both Eyes; healthy shots and the existing audio will be retained.</div>
         </div>
         <div id="repair-options" hidden>
           <label for="repair-layout" data-i18n="cadence.layout">Input video layout</label>
@@ -1810,7 +1873,7 @@
         <label id="cadence-option"><input type="checkbox" id="check-cadence">
           <span data-i18n="cadence.check">Check motion continuity after conversion (SBS)</span></label>
         <!-- Trimming for quick preview -->
-        <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-subtle);">
+        <div id="quick-preview-options" style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border-subtle);">
           <div class="control-label">
             <span data-i18n="options.trim_title">Quick Preview Clip (Optional)</span>
           </div>
@@ -2167,7 +2230,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="5 3 19 12 5 21 5 3" />
           </svg>
-          <span>Start 3D Conversion</span>
+          <span id="btn-start-label">Start 3D Conversion</span>
         </button>
 
         <!-- Active Controls Container (Pause/Resume + Cancel) -->
@@ -2375,6 +2438,7 @@
     });
     const inputPath = document.getElementById('input-path');
     const btnBrowse = document.getElementById('btn-browse');
+    const btnBrowseRepairSource = document.getElementById('btn-browse-repair-source');
     const mediaInfoBox = document.getElementById('media-info-box');
     const infoRes = document.getElementById('info-res');
     const infoFps = document.getElementById('info-fps');
@@ -2526,6 +2590,23 @@
       }
     });
 
+    btnBrowseRepairSource.addEventListener('click', async () => {
+      if (selectingFile) return;
+      selectingFile = true;
+      btnBrowseRepairSource.disabled = true;
+      try {
+        const res = await fetch('/api/pick-file', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'media' })
+        });
+        const data = await res.json();
+        if (data.path) document.getElementById('repair-source-path').value = data.path;
+      } finally {
+        selectingFile = false;
+        btnBrowseRepairSource.disabled = false;
+      }
+    });
+
     dropzone.addEventListener('click', () => btnBrowse.click());
     dropzone.addEventListener('dragover', (e) => {
       e.preventDefault();
@@ -2616,11 +2697,27 @@
       }
     }
 
-    document.getElementById('operation').addEventListener('change', (event) => {
-      const repair = event.target.value === 'repair';
+    function updateOperationUI() {
+      const operation = document.getElementById('operation').value;
+      const repair = operation === 'repair';
+      const stereoRepair = operation === 'stereo_repair';
       document.getElementById('repair-options').hidden = !repair;
-      document.getElementById('cadence-option').hidden = repair;
+      document.getElementById('stereo-repair-options').hidden = !stereoRepair;
+      document.getElementById('cadence-option').hidden = repair || stereoRepair;
       document.getElementById('presets-card-title').closest('section').hidden = repair;
+      document.getElementById('quick-preview-options').hidden = stereoRepair;
+      document.getElementById('primary-file-label').hidden = !stereoRepair;
+      document.getElementById('media-card-title-text').textContent = stereoRepair
+        ? t('cadence.stereo_title') : t('media.source_title');
+      document.getElementById('dropzone-main-text').textContent = stereoRepair
+        ? t('cadence.stereo_dropzone') : t('media.dropzone_main');
+      document.getElementById('btn-start-label').textContent = stereoRepair
+        ? t('cadence.stereo_start') : (repair ? t('cadence.repair_start') : t('monitor.btn_start'));
+    }
+    document.getElementById('operation').addEventListener('change', updateOperationUI);
+
+    document.getElementById('repair-detection-mode').addEventListener('change', (event) => {
+      document.getElementById('manual-repair-ranges').hidden = event.target.value !== 'manual';
     });
 
     // Start Conversion
@@ -2635,7 +2732,13 @@
       const strengthVal = parseFloat(sliderStrength.value);
       const payload = {
         operation: document.getElementById("operation").value,
-        repair_layout: document.getElementById("repair-layout").value,
+        repair_layout: document.getElementById("operation").value === "stereo_repair"
+          ? document.getElementById("stereo-repair-layout").value
+          : document.getElementById("repair-layout").value,
+        repair_source_path: document.getElementById("repair-source-path").value.trim() || null,
+        repair_ranges: document.getElementById("repair-detection-mode").value === "auto"
+          ? "auto"
+          : document.getElementById("repair-ranges").value.trim(),
         check_cadence: document.getElementById("check-cadence").checked,
         input_path: path,
         format: formatSelect.value,
@@ -2913,6 +3016,7 @@
         const val = t(key);
         if (val && val !== key) el.title = val;
       });
+      updateOperationUI();
     }
 
     async function setLanguage(langCode) {

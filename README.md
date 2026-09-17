@@ -16,6 +16,7 @@ Features native hardware acceleration across platforms:
 - **100% Offline & Private:** Zero telemetry, no cloud APIs, no tokens, and no data leaves your machine.
 - **State-of-the-Art Depth AI:** Pure PyTorch implementation of **DINOv2 ViT-Small + DPT Depth Anything** running directly on your GPU.
 - **Anti-Ghosting Stereo Synthesis (`right_only` mode):** Keeps the original left eye 100% untouched and unwarped. Completely eliminates the line deformation, blurriness, and double-vision ghosting typical of naive DIBR converters.
+- **Stereo artifact repair:** Existing one-sided conversions can be scanned and selectively regenerated in symmetric `both` mode. The repair reuses healthy frames and the existing audio, and runs depth inference only for frames carrying the one-sided signature.
 - **Bilateral Edge Snapping:** Sharpens depth boundaries along high-contrast lines and subtitle edges to prevent warped text.
 - **Temporal Coherence Filter:** Eliminates inter-frame depth flickering in video while adapting to fast-moving scene cuts.
 - **Dynamic Black Bar Protection:** Detects letterbox or pillarbox bars per frame, neutralizes them only for depth inference, and preserves the full canvas through IMAX aspect-ratio changes.
@@ -244,6 +245,38 @@ Test depth settings on a short excerpt before processing an entire movie:
 # Convert a 10-second test clip starting at second 30:
 python convert_3d.py -i movie.mp4 -f hsbs -s 30 -t 10
 ```
+
+### 5. Repairing a One-Sided Conversion
+
+If a movie was converted with `right_only` or `left_only` and visible warping is
+found, the repair scanner can regenerate affected frames with symmetric
+`both`-eye rendering. It needs the synchronized original 2D master and the
+existing SBS conversion:
+
+```bash
+python -m src.stereo_artifact_repair \
+  --source-2d "/path/to/original-2d.mkv" \
+  --converted-3d "/path/to/existing-3d-hsbs.mp4" \
+  --output "/path/to/existing-3d-hsbs.repaired.mp4" \
+  --layout hsbs \
+  --repair-ranges auto \
+  --depth-intensity 0.030 \
+  --convergence 0.45 \
+  --temporal-smooth 0.70 \
+  --style-3d cinematic
+```
+
+`--repair-ranges auto` samples the conversion, detects camera cuts, compensates
+normal stereo disparity, and scores missing edges, invented contours, local
+blur, and residual deformation. It writes an adjacent
+`*.artifacts.json` report listing every detected shot with its exact start,
+end, peak score, and pristine eye. Only those reported shots run through depth
+inference and symmetric reconstruction. For a manually identified artifact,
+pass one or more time ranges in seconds, such as
+`--repair-ranges "812.5-819.2,1450-1455"`. Healthy frames are reused from the
+existing conversion; only selected frames run through depth inference again.
+The repaired video is encoded once and receives the audio from the existing 3D
+file. The input files are never overwritten.
 
 ---
 
