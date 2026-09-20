@@ -467,6 +467,12 @@ def main():
         help="Inference depth profile: fast (392p, up to 4x faster on 4K), balanced (518p default), high_fidelity (highest detail)"
     )
     parser.add_argument(
+        "--depth-model",
+        default="builtin-da-v2-small",
+        help="Depth estimator key shown by --list-depth-models and the local portal"
+    )
+    parser.add_argument("--list-depth-models", action="store_true", help="List available depth estimator keys and exit")
+    parser.add_argument(
         "--render-mode",
         choices=["right_only", "left_only", "both"],
         default="right_only",
@@ -530,6 +536,12 @@ def main():
     )
 
     args = parser.parse_args()
+
+    if args.list_depth_models:
+        from src.depth_models import DEPTH_MODELS
+        for item in DEPTH_MODELS:
+            print(f"{item.key:34} {item.backend:10} {item.name}")
+        return
 
     from src.config import BIN_DIR
     from src.system_check import run_full_system_diagnostic
@@ -670,7 +682,7 @@ def main():
     # Initialize depth engine only if not using custom depth map
     depth_engine = None
     if not custom_depth_path:
-        depth_engine = DepthEngine(depth_profile=args.depth_profile)
+        depth_engine = DepthEngine(depth_profile=args.depth_profile, depth_model=args.depth_model)
         depth_engine.temporal_filter.alpha = args.temporal_smooth
 
     synthesizer = StereoSynthesizer(

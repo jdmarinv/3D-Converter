@@ -110,6 +110,29 @@ The project includes a web studio interface with real-time SSE progress streamin
 
 *The GUI will automatically open in your default web browser at **`http://127.0.0.1:8765`**.*
 
+### Pro depth models
+
+The **Depth Model** selector includes the built-in model plus ONNX, Transformers,
+Depth Anything 3, and ZoeDepth models. Models download on first use and are then
+read from the local Hugging Face or Torch cache.
+
+```bash
+# ONNX and Hugging Face models
+python -m pip install -r requirements-pro.txt
+
+# Additional DA3 models
+python -m pip install -r requirements-da3.txt
+
+# Inspect keys or select a model from the CLI
+python convert_3d.py --list-depth-models
+python convert_3d.py -i movie.mkv --depth-model da-v2-small-onnx
+```
+
+Metric estimators are converted to inverse depth before stereo synthesis so
+near objects retain the same disparity direction as the built-in model. Prompt
+Depth Anything uses the built-in estimator as its dense prompt when no LiDAR
+depth prompt is available.
+
 ---
 
 ## First-Time Installation & Setup (Cross-Platform)

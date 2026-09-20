@@ -34,6 +34,12 @@ class PortalIntegration(unittest.TestCase):
     def test_portal_defaults_to_symmetric_stereo(self):
         req=server.ConversionRequest(input_path=str(self.source))
         self.assertEqual(req.render_mode,'both')
+        self.assertEqual(req.depth_model,'builtin-da-v2-small')
+    def test_selected_depth_model_reaches_converter(self):
+        req=server.ConversionRequest(input_path=str(self.source),depth_model='da3-small')
+        command=server.build_conversion_command(req)
+        model_index=command.index('--depth-model')
+        self.assertEqual(command[model_index+1],'da3-small')
     def test_clip_output_name_preserves_existing_conversion(self):
         req=server.ConversionRequest(input_path=str(self.source),start_time=9,duration=6)
         with patch.object(server,'DEFAULT_OUTPUT_DIR',self.root):

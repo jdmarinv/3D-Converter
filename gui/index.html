@@ -2013,7 +2013,7 @@
           </div>
         </div>
 
-        <!-- Inference Profile & Speed Acceleration -->
+        <!-- Existing inference controls -->
         <div class="controls-grid">
           <div>
             <div class="control-label">
@@ -2039,6 +2039,46 @@
                 <option value="3" data-i18n="controls.depth_stride_3">3x (Ultra Fast - Every 3 frames)</option>
               </select>
             </div>
+          </div>
+        </div>
+
+        <!-- Additional model backend; the original profiles above remain intact. -->
+        <div style="margin-bottom: 18px;">
+          <div class="control-label"><span>Depth Estimation Model</span></div>
+          <div class="select-wrapper">
+            <select id="depth-model-select" class="select-custom">
+              <optgroup label="Existing local model">
+                <option value="builtin-da-v2-small" selected>Depth Anything v2 Small (Local PyTorch)</option>
+              </optgroup>
+              <optgroup label="Pro · ONNX">
+                <option value="da-v2-small-onnx">Depth Anything v2 Small (ONNX)</option>
+                <option value="distill-any-depth-small-onnx">Distill-Any-Depth Small (ONNX)</option>
+                <option value="distill-any-depth-base-onnx">Distill-Any-Depth Base (ONNX)</option>
+                <option value="distill-any-depth-large-onnx">Distill-Any-Depth Large (ONNX)</option>
+                <option value="video-depth-anything-onnx">Video Depth Anything (ONNX)</option>
+              </optgroup>
+              <optgroup label="Pro · Hugging Face">
+                <option value="distill-any-depth-large-hf">Distill-Any-Depth Large</option>
+                <option value="da-v2-metric-outdoor-large">Depth Anything v2 Metric Outdoor (Large)</option>
+                <option value="da-v1-small">Depth Anything v1 Small</option>
+                <option value="da-v1-base">Depth Anything v1 Base</option>
+                <option value="da-v1-large">Depth Anything v1 Large</option>
+                <option value="dpt-beit-large-512">DPT BEiT Large 512</option>
+                <option value="prompt-da-vits-transparent">Prompt Depth Anything VITS Transparent</option>
+              </optgroup>
+              <optgroup label="Pro · Depth Anything 3">
+                <option value="da3-small">DA3-SMALL</option>
+                <option value="da3-base">DA3-BASE</option>
+                <option value="da3mono-large">DA3MONO-LARGE</option>
+                <option value="da3metric-large">DA3METRIC-LARGE</option>
+                <option value="da3-large-1.1">DA3-LARGE-1.1</option>
+              </optgroup>
+              <optgroup label="Pro · ZoeDepth">
+                <option value="zoedepth-n">ZoeDepth N (NYU)</option>
+                <option value="zoedepth-k">ZoeDepth K (KITTI)</option>
+                <option value="zoedepth-nk">ZoeDepth NK (Recommended)</option>
+              </optgroup>
+            </select>
           </div>
         </div>
 
@@ -2448,6 +2488,7 @@
     const presetButtons = document.querySelectorAll('.preset-btn');
     const formatSelect = document.getElementById('format-select');
     const renderModeSelect = document.getElementById('render-mode-select');
+    const depthModelSelect = document.getElementById('depth-model-select');
     const depthProfileSelect = document.getElementById('depth-profile-select');
     const depthStrideSelect = document.getElementById('depth-stride-select');
     const styleSelect = document.getElementById('style-3d-select');
@@ -2748,6 +2789,7 @@
         depth_intensity: strengthVal * 0.005,
         style_3d: styleSelect.value,
         depth_profile: depthProfileSelect.value,
+        depth_model: depthModelSelect.value,
         depth_stride: parseInt(depthStrideSelect.value, 10) || 1,
         convergence: parseFloat(sliderConvergence.value),
         temporal_smooth: parseFloat(smoothingSelect.value),
@@ -3363,6 +3405,7 @@
         if (item.render_mode) renderModeSelect.value = item.render_mode;
         if (item.style_3d) styleSelect.value = item.style_3d;
         if (item.depth_profile) depthProfileSelect.value = item.depth_profile;
+        if (item.depth_model) depthModelSelect.value = item.depth_model;
         if (item.depth_stride) depthStrideSelect.value = String(item.depth_stride);
         if (item.temporal_smooth !== undefined) {
           smoothingSelect.value = Number(item.temporal_smooth).toFixed(2);

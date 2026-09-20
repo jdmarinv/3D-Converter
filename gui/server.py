@@ -19,7 +19,7 @@ from typing import Optional, Dict, Any
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -28,6 +28,7 @@ from src.config import DEVICE, DEFAULT_OUTPUT_DIR, BIN_DIR
 from src.preprocessor import get_media_info, has_audio_stream
 from src.system_check import run_full_system_diagnostic, detect_os
 from src.i18n import get_available_locales, load_locale
+from src.depth_models import DEPTH_MODELS, DEFAULT_DEPTH_MODEL_KEY, get_depth_model_spec
 from convert_3d import PROFILES
 
 app = FastAPI(title="2D to 3D Converter")
@@ -80,6 +81,7 @@ class ConversionRequest(BaseModel):
     strength_3d: Optional[float] = None
     style_3d: Optional[str] = "natural"
     depth_profile: Optional[str] = "balanced"
+    depth_model: str = DEFAULT_DEPTH_MODEL_KEY
     depth_stride: int = 1
     convergence: float = 0.50
     pop_out: float = 0.0
@@ -89,6 +91,11 @@ class ConversionRequest(BaseModel):
     custom_depth: Optional[str] = None
     start_time: float = Field(default=0.0, ge=0)
     duration: float = Field(default=0.0, ge=0)
+
+    @field_validator("depth_model")
+    @classmethod
+    def validate_depth_model(cls, value: str) -> str:
+        return get_depth_model_spec(value).key
 
 @app.get("/", response_class=HTMLResponse)
 async def get_index():
@@ -101,6 +108,10 @@ async def get_locales():
     Returns list of installed translation files so UI can populate the language selector dynamically.
     """
     return get_available_locales()
+
+@app.get("/api/depth-models")
+async def get_depth_models():
+    return {"default": DEFAULT_DEPTH_MODEL_KEY, "models": [item.public_dict() for item in DEPTH_MODELS]}
 
 @app.get("/api/locales/{code}")
 async def get_locale_data(code: str):
@@ -306,6 +317,7 @@ def build_conversion_command(req):
     if req.strength_3d is not None: cmd += ["--3d-strength", str(req.strength_3d)]
     if req.style_3d: cmd += ["--style-3d", req.style_3d]
     if req.depth_profile: cmd += ["--depth-profile", req.depth_profile]
+    cmd += ["--depth-model", get_depth_model_spec(req.depth_model).key]
     if req.depth_stride and req.depth_stride > 1: cmd += ["--depth-stride", str(req.depth_stride)]
     if req.profile: cmd += ["--profile", req.profile]
     if req.save_depth: cmd += ["--save-depth"]
@@ -385,6 +397,7 @@ def run_conversion_worker(req):
                     "strength_3d": req.strength_3d if req.strength_3d is not None else 5.0,
                     "style_3d": req.style_3d or "natural",
                     "depth_profile": req.depth_profile or "balanced",
+                    "depth_model": req.depth_model or DEFAULT_DEPTH_MODEL_KEY,
                     "depth_stride": req.depth_stride or 1,
                     "convergence": req.convergence,
                     "temporal_smooth": req.temporal_smooth,

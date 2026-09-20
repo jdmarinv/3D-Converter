@@ -10,6 +10,7 @@ from typing import Optional, Union, Tuple, List
 
 from .config import DEVICE, DEFAULT_DEPTH_MODEL, DEFAULT_PATCH_SIZE
 from .depth_model import DepthAnything, load_depth_model
+from .depth_models import DEFAULT_DEPTH_MODEL_KEY, ExternalDepthBackend, get_depth_model_spec
 
 class TemporalDepthFilter:
     """
@@ -125,11 +126,13 @@ class DepthEngine:
         model_path: Optional[Union[str, Path]] = None,
         device: Optional[torch.device] = None,
         patch_size: Optional[int] = None,
-        depth_profile: str = "balanced"
+        depth_profile: str = "balanced",
+        depth_model: str = DEFAULT_DEPTH_MODEL_KEY,
     ):
         self.device = device or DEVICE
         self.model_path = Path(model_path or DEFAULT_DEPTH_MODEL)
         self.depth_profile = depth_profile
+        self.model_spec = get_depth_model_spec(depth_model)
 
         # Configure patch size based on depth_profile if patch_size not explicitly given
         if patch_size is not None:
@@ -145,8 +148,18 @@ class DepthEngine:
         self.mean = torch.tensor([0.485, 0.456, 0.406], device=self.device).view(1, 3, 1, 1)
         self.std = torch.tensor([0.229, 0.224, 0.225], device=self.device).view(1, 3, 1, 1)
 
-        print(f"[DepthEngine] Loading model weights from {self.model_path} on {self.device} (Profile: {self.depth_profile}, Patch: {self.patch_size})...")
-        self.model = load_depth_model(self.model_path, self.device)
+        print(f"[DepthEngine] Loading {self.model_spec.name} on {self.device} (Profile: {self.depth_profile}, Patch: {self.patch_size})...")
+        self.prompt_model = None
+        if self.model_spec.backend == "builtin":
+            self.model = load_depth_model(self.model_path, self.device)
+            self.backend = None
+        else:
+            self.model = None
+            self.backend = ExternalDepthBackend(self.model_spec, self.device, self.patch_size)
+            if self.model_spec.backend == "prompt_hf":
+                # PromptDA needs a metric/depth prompt. The existing local model
+                # supplies a dense prompt when the conversion has no LiDAR input.
+                self.prompt_model = load_depth_model(self.model_path, self.device)
         print("[DepthEngine] Model ready for high-fidelity offline inference.")
 
     @staticmethod
@@ -210,23 +223,37 @@ class DepthEngine:
         if not rgb_images:
             return []
 
-        tensors = []
-        orig_sizes = []
-        for img in rgb_images:
-            t, (h, w) = self._prepare_tensor(img)
-            tensors.append(t)
-            orig_sizes.append((h, w))
-
-        batch_tensor = torch.cat(tensors, dim=0)
-        raw_depths = self.model(batch_tensor)
+        orig_sizes = [img.shape[:2] for img in rgb_images]
+        if self.backend is None or self.prompt_model is not None:
+            tensors = [self._prepare_tensor(img)[0] for img in rgb_images]
+            batch_tensor = torch.cat(tensors, dim=0)
+        if self.backend is None:
+            batch_depth = self.model(batch_tensor)
+            raw_values = [batch_depth[i:i+1] for i in range(len(rgb_images))]
+        else:
+            prompts = None
+            if self.prompt_model is not None:
+                prompt_raw = self.prompt_model(batch_tensor)
+                prompts = [prompt_raw[i].squeeze().detach().cpu().numpy() for i in range(len(rgb_images))]
+            raw_values = self.backend.infer(rgb_images, prompt_depths=prompts)
 
         depth_maps = []
         for i in range(len(rgb_images)):
             orig_h, orig_w = orig_sizes[i]
-            d_up = F.interpolate(
-                raw_depths[i:i+1], size=(orig_h, orig_w), mode="bilinear", align_corners=True
-            )
-            depth_np = d_up.squeeze().cpu().numpy()
+            raw = raw_values[i]
+            if isinstance(raw, torch.Tensor):
+                d_up = F.interpolate(raw, size=(orig_h, orig_w), mode="bilinear", align_corners=True)
+                depth_np = d_up.squeeze().cpu().numpy()
+            else:
+                depth_np = cv2.resize(np.asarray(raw, dtype=np.float32), (orig_w, orig_h), interpolation=cv2.INTER_CUBIC)
+
+            # Metric models report distance (farther = larger). Stereo synthesis
+            # expects inverse depth (nearer = larger).
+            if self.model_spec.metric:
+                valid = np.isfinite(depth_np) & (depth_np > 1e-6)
+                inverse = np.zeros_like(depth_np, dtype=np.float32)
+                inverse[valid] = 1.0 / depth_np[valid]
+                depth_np = inverse
 
             d_min = np.percentile(depth_np, 1)
             d_max = np.percentile(depth_np, 99)
