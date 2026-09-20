@@ -38,9 +38,9 @@ DEPTH_MODELS: tuple[DepthModelSpec, ...] = (
     DepthModelSpec("builtin-da-v2-small", "Depth Anything v2 Small (Built-in)", "builtin", "Apache-2.0"),
     DepthModelSpec("da-v2-small-onnx", "Depth Anything v2 Small (ONNX)", "onnx", "Apache-2.0", "onnx-community/depth-anything-v2-small-ONNX", "onnx/model.onnx"),
     DepthModelSpec("distill-any-depth-large-hf", "Distill-Any-Depth Large", "hf", "MIT", "xingyang1/Distill-Any-Depth-Large-hf"),
-    DepthModelSpec("distill-any-depth-small-onnx", "Distill-Any-Depth Small (ONNX)", "onnx", "MIT", "FuryTMP/Distill-Any-Depth-Small-onnx", "Distill Any Depth Small/model.onnx"),
-    DepthModelSpec("distill-any-depth-base-onnx", "Distill-Any-Depth Base (ONNX)", "onnx", "MIT", "FuryTMP/Distill-Any-Depth-Base-onnx", "Distill Any Depth Base/model.onnx"),
-    DepthModelSpec("distill-any-depth-large-onnx", "Distill-Any-Depth Large (ONNX)", "onnx", "MIT", "FuryTMP/Distill-Any-Depth-Large-onnx", "Distill Any Depth Large/model.onnx"),
+    DepthModelSpec("distill-any-depth-small-onnx", "Distill-Any-Depth Small (ONNX)", "onnx", "MIT", "FuryTMP/Distill-Any-Depth-Small-onnx", "Distill Any Depth Small/model.onnx", input_size=(518, 518)),
+    DepthModelSpec("distill-any-depth-base-onnx", "Distill-Any-Depth Base (ONNX)", "onnx", "MIT", "FuryTMP/Distill-Any-Depth-Base-onnx", "Distill Any Depth Base/model.onnx", input_size=(518, 518)),
+    DepthModelSpec("distill-any-depth-large-onnx", "Distill-Any-Depth Large (ONNX)", "onnx", "MIT", "FuryTMP/Distill-Any-Depth-Large-onnx", "Distill Any Depth Large/model.onnx", input_size=(518, 518)),
     DepthModelSpec("video-depth-anything-onnx", "Video Depth Anything (ONNX)", "onnx", "Apache-2.0", "FuryTMP/Video-Depth-Anything-L-ONNX-512x288", "VideoDepthAnything/model.onnx", input_size=(512, 288)),
     DepthModelSpec("da3-small", "DA3-SMALL", "da3", "Apache-2.0", "depth-anything/DA3-SMALL"),
     DepthModelSpec("da3-base", "DA3-BASE", "da3", "Apache-2.0", "depth-anything/DA3-BASE"),
@@ -92,21 +92,62 @@ class ExternalDepthBackend:
         self.processor = None
         self.model = None
         self.session = None
+        self.model_path = None
         self._load()
+
+    def _create_onnx_session(self, model_path: str, force_cpu: bool = False, disable_opt: bool = False) -> Any:
+        os.environ.setdefault("ORT_DISABLE_TELEMETRY", "1")
+        import onnxruntime as ort
+        if hasattr(ort, "disable_telemetry_events"):
+            ort.disable_telemetry_events()
+        opts = ort.SessionOptions()
+        if disable_opt:
+            opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+
+        available = set(ort.get_available_providers())
+        if force_cpu:
+            providers = ["CPUExecutionProvider"]
+        else:
+            preferred = ["CoreMLExecutionProvider", "CUDAExecutionProvider", "CPUExecutionProvider"]
+            providers = [p for p in preferred if p in available]
+            if not providers:
+                providers = ["CPUExecutionProvider"]
+
+        return ort.InferenceSession(model_path, sess_options=opts, providers=providers)
 
     def _load(self) -> None:
         if self.spec.backend == "onnx":
             try:
+                os.environ.setdefault("ORT_DISABLE_TELEMETRY", "1")
                 import onnxruntime as ort
                 from huggingface_hub import snapshot_download
             except ImportError as exc:
                 raise _missing("ONNX Runtime and huggingface_hub", "requirements-pro.txt") from exc
             patterns = [self.spec.filename, f"{self.spec.filename}_data"]
             snapshot = snapshot_download(self.spec.repo_id, allow_patterns=patterns)
-            model_path = str(Path(snapshot) / self.spec.filename)
-            providers = ["CoreMLExecutionProvider", "CPUExecutionProvider"]
-            available = set(ort.get_available_providers())
-            self.session = ort.InferenceSession(model_path, providers=[p for p in providers if p in available])
+            self.model_path = str(Path(snapshot) / self.spec.filename)
+            
+            # VideoDepthAnything is exported with a 5D temporal transformer graph
+            # that is incompatible with CoreML partitioners and standard graph optimization.
+            if self.spec.key == "video-depth-anything-onnx":
+                strategies = [(True, True)]
+            else:
+                strategies = [
+                    (False, False),  # Preferred providers, default optimization
+                    (False, True),   # Preferred providers, ORT_DISABLE_ALL
+                    (True, False),   # CPU only, default optimization
+                    (True, True),    # CPU only, ORT_DISABLE_ALL
+                ]
+            last_exc = None
+            for force_cpu, disable_opt in strategies:
+                try:
+                    self.session = self._create_onnx_session(self.model_path, force_cpu=force_cpu, disable_opt=disable_opt)
+                    return
+                except Exception as exc:
+                    last_exc = exc
+                    continue
+            if last_exc:
+                raise last_exc
             return
 
         if self.spec.backend in {"hf", "prompt_hf"}:
@@ -203,15 +244,53 @@ class ExternalDepthBackend:
             image = image.transpose(2, 0, 1)
         return image[None].astype(np.float32)
 
+    def _infer_onnx(self, images: Sequence[np.ndarray]) -> list[np.ndarray]:
+        input_meta = self.session.get_inputs()[0]
+        input_name = input_meta.name
+        shape = input_meta.shape
+        is_5d = len(shape) == 5
+
+        if is_5d:
+            width, height = self.spec.input_size or (512, 288)
+            processed = []
+            for img in images:
+                resized = cv2.resize(img, (width, height), interpolation=cv2.INTER_CUBIC).astype(np.float32) / 255.0
+                norm = (resized - np.array([0.485, 0.456, 0.406], np.float32)) / np.array([0.229, 0.224, 0.225], np.float32)
+                processed.append(norm.transpose(2, 0, 1))
+
+            n_frames = len(processed)
+            chunk_size = 8
+            results = []
+            for i in range(0, n_frames, chunk_size):
+                chunk = processed[i:i + chunk_size]
+                actual_len = len(chunk)
+                if actual_len < chunk_size:
+                    chunk = chunk + [chunk[-1]] * (chunk_size - actual_len)
+                tensor = np.stack(chunk, axis=0)[None].astype(np.float32)
+                try:
+                    out = self.session.run(None, {input_name: tensor})[0]
+                except Exception:
+                    self.session = self._create_onnx_session(self.model_path, force_cpu=True, disable_opt=True)
+                    out = self.session.run(None, {input_name: tensor})[0]
+                for f in range(actual_len):
+                    results.append(self._array(out[0, f]))
+            return results
+
+        results = []
+        for image in images:
+            feed = {input_name: self._onnx_input(image)}
+            try:
+                output = self.session.run(None, feed)[0]
+            except Exception:
+                self.session = self._create_onnx_session(self.model_path, force_cpu=True, disable_opt=True)
+                output = self.session.run(None, feed)[0]
+            results.append(self._array(output))
+        return results
+
     @torch.inference_mode()
     def infer(self, images: Sequence[np.ndarray], prompt_depths: Optional[Sequence[np.ndarray]] = None) -> list[np.ndarray]:
         if self.spec.backend == "onnx":
-            results = []
-            input_name = self.session.get_inputs()[0].name
-            for image in images:
-                output = self.session.run(None, {input_name: self._onnx_input(image)})[0]
-                results.append(self._array(output))
-            return results
+            return self._infer_onnx(images)
 
         if self.spec.backend == "da3":
             prediction = self.model.inference(list(images))
