@@ -7,6 +7,7 @@ dependency error instead of failing at startup.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import os
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
@@ -127,6 +128,9 @@ class ExternalDepthBackend:
             return
 
         if self.spec.backend == "da3":
+            # DA3 imports Open3D, which bundles a second OpenMP runtime on macOS.
+            # Allow both runtimes before importing its API.
+            os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
             try:
                 from depth_anything_3.api import DepthAnything3
             except ImportError as exc:
@@ -139,8 +143,32 @@ class ExternalDepthBackend:
             return
 
         if self.spec.backend == "zoe":
-            # ZoeDepth's supported public loader is its torch.hub entry point.
-            self.model = torch.hub.load("isl-org/ZoeDepth", self.spec.filename, pretrained=True)
+            # ZoeDepth checkpoints contain obsolete relative-position index
+            # buffers that recent timm versions no longer register. Build the
+            # official architecture, then discard only those derived buffers.
+            self.model = torch.hub.load(
+                "isl-org/ZoeDepth", self.spec.filename, pretrained=False, trust_repo=True
+            )
+            checkpoint_name = {
+                "ZoeD_N": "ZoeD_M12_N.pt",
+                "ZoeD_K": "ZoeD_M12_K.pt",
+                "ZoeD_NK": "ZoeD_M12_NK.pt",
+            }[self.spec.filename]
+            checkpoint = Path(torch.hub.get_dir()) / "checkpoints" / checkpoint_name
+            if not checkpoint.is_file():
+                raise RuntimeError(f"Missing ZoeDepth checkpoint: {checkpoint}")
+            state = torch.load(checkpoint, map_location="cpu", weights_only=False)
+            state = state.get("model", state)
+            state = {key.removeprefix("module."): value for key, value in state.items()
+                     if not key.endswith("relative_position_index")}
+            missing, unexpected = self.model.load_state_dict(state, strict=False)
+            if unexpected or any(not key.endswith("relative_position_index") for key in missing):
+                raise RuntimeError(f"ZoeDepth checkpoint mismatch; missing={missing}, unexpected={unexpected}")
+            # MiDaS' BEiT compatibility shim targets old timm's ``drop_path``;
+            # current timm splits it into ``drop_path1`` and ``drop_path2``.
+            for module in self.model.modules():
+                if not hasattr(module, "drop_path") and hasattr(module, "drop_path1"):
+                    module.drop_path = module.drop_path1
             self.model.to(self.device).eval()
             return
 
